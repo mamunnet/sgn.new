@@ -4,42 +4,36 @@ import { resolve } from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-  // Load env file based on mode
   const env = loadEnv(mode, process.cwd(), '');
-
+  
   return {
-    plugins: [
-      react({
-        jsxRuntime: 'classic',
-        jsxImportSource: 'react',
-        babel: {
-          presets: ['@babel/preset-react'],
-          plugins: ['@babel/plugin-transform-react-jsx']
-        }
-      })
-    ],
+    plugins: [react()],
     base: './',
     resolve: {
       alias: {
-        '@': resolve(__dirname, './src'),
-        'react': resolve(__dirname, './node_modules/react'),
-        'react-dom': resolve(__dirname, './node_modules/react-dom'),
+        '@': resolve(__dirname, './src')
       }
     },
     build: {
       outDir: 'dist',
-      assetsDir: 'assets',
       sourcemap: false,
       rollupOptions: {
-        input: {
-          main: resolve(__dirname, 'index.html')
-        },
         output: {
-          manualChunks: {
-            'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-            'firebase-vendor': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
-            'ui-vendor': ['framer-motion', 'lucide-react', 'react-hot-toast']
-          }
+          manualChunks(id) {
+            if (id.includes('node_modules')) {
+              if (id.includes('react') || id.includes('scheduler')) {
+                return 'react';
+              } else if (id.includes('firebase')) {
+                return 'firebase';
+              } else if (id.includes('@')) {
+                return 'vendor';
+              }
+              return 'vendor';
+            }
+          },
+          assetFileNames: 'assets/[hash][extname]',
+          chunkFileNames: 'assets/[hash].js',
+          entryFileNames: 'assets/[hash].js'
         }
       },
       minify: 'terser',
@@ -50,24 +44,16 @@ export default defineConfig(({ mode }) => {
         }
       }
     },
-    optimizeDeps: {
-      include: [
-        'react',
-        'react-dom',
-        'react-router-dom',
-        'firebase/app',
-        'firebase/auth',
-        'firebase/firestore',
-        'firebase/storage'
-      ],
-      force: true
-    },
-    esbuild: {
-      jsxFactory: 'React.createElement',
-      jsxFragment: 'React.Fragment'
-    },
     define: {
-      'process.env': env
+      'process.env': {},
+      global: {},
+      'process.env.FIREBASE_API_KEY': JSON.stringify(env.VITE_FIREBASE_API_KEY || ''),
+      'process.env.FIREBASE_AUTH_DOMAIN': JSON.stringify(env.VITE_FIREBASE_AUTH_DOMAIN || ''),
+      'process.env.FIREBASE_PROJECT_ID': JSON.stringify(env.VITE_FIREBASE_PROJECT_ID || ''),
+      'process.env.FIREBASE_STORAGE_BUCKET': JSON.stringify(env.VITE_FIREBASE_STORAGE_BUCKET || ''),
+      'process.env.FIREBASE_MESSAGING_SENDER_ID': JSON.stringify(env.VITE_FIREBASE_MESSAGING_SENDER_ID || ''),
+      'process.env.FIREBASE_APP_ID': JSON.stringify(env.VITE_FIREBASE_APP_ID || ''),
+      'process.env.FIREBASE_MEASUREMENT_ID': JSON.stringify(env.VITE_FIREBASE_MEASUREMENT_ID || '')
     }
   };
 });
