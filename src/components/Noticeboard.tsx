@@ -13,6 +13,16 @@ interface Notice {
 
 const Noticeboard: React.FC = () => {
   const [notices, setNotices] = useState<Notice[]>([]);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const q = query(collection(db, 'notices'), orderBy('date', 'desc'));
@@ -30,12 +40,18 @@ const Noticeboard: React.FC = () => {
   const renderNotices = (key: string = '') => (
     <>
       {notices.map((notice, index) => (
-        <span key={`${notice.id}${key}`} className="mx-4 md:mx-8 inline-block text-sm md:text-base">
+        <span 
+          key={`${notice.id}${key}`} 
+          className={`
+            inline-block whitespace-normal
+            ${isMobile ? 'text-xs px-2' : 'text-sm md:text-base mx-4 md:mx-8'}
+          `}
+        >
           <span className="font-semibold text-red-400">{notice.title}</span>
-          <span className="mx-2">-</span>
-          <span>{notice.content}</span>
+          <span className="mx-1 md:mx-2">-</span>
+          <span className="line-clamp-1">{notice.content}</span>
           {index < notices.length - 1 && (
-            <span className="mx-2 md:mx-4 text-red-400">•</span>
+            <span className="mx-1 md:mx-2 text-red-400">•</span>
           )}
         </span>
       ))}
@@ -43,20 +59,24 @@ const Noticeboard: React.FC = () => {
   );
 
   return (
-    <div className="relative bg-gray-900 text-white py-2 md:py-3">
+    <div className="relative bg-gray-900 text-white py-1 md:py-3 overflow-hidden">
+      {/* Title Section with responsive width */}
       <motion.div
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.6 }}
-        className="absolute left-0 top-0 bottom-0 bg-red-600 w-24 md:w-48 flex items-center justify-center z-10"
+        className="absolute left-0 top-0 bottom-0 bg-red-600 w-20 md:w-48 flex items-center justify-center z-10"
       >
-        <div className="flex items-center space-x-2">
-          <Bell className="h-4 w-4 md:h-5 md:w-5 animate-bounce" />
-          <h2 className="text-sm md:text-base font-bold whitespace-nowrap">Latest Updates</h2>
+        <div className="flex items-center space-x-1 md:space-x-2 px-1 md:px-2">
+          <Bell className="h-3 w-3 md:h-5 md:w-5 animate-bounce" />
+          <h2 className="text-xs md:text-base font-bold whitespace-nowrap">
+            {isMobile ? 'Updates' : 'Latest Updates'}
+          </h2>
         </div>
       </motion.div>
 
-      <div className="ml-24 md:ml-48 overflow-hidden whitespace-nowrap">
+      {/* Marquee container with adjusted padding */}
+      <div className="ml-20 md:ml-48 overflow-hidden">
         <div className="animate-marquee inline-block">
           {renderNotices()}
         </div>
@@ -65,8 +85,9 @@ const Noticeboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="absolute left-24 md:left-48 top-0 bottom-0 w-4 md:w-8 bg-gradient-to-r from-gray-900 to-transparent pointer-events-none" />
-      <div className="absolute right-0 top-0 bottom-0 w-4 md:w-8 bg-gradient-to-l from-gray-900 to-transparent pointer-events-none" />
+      {/* Gradient overlays */}
+      <div className="absolute left-20 md:left-48 top-0 bottom-0 w-2 md:w-8 bg-gradient-to-r from-gray-900 to-transparent pointer-events-none" />
+      <div className="absolute right-0 top-0 bottom-0 w-2 md:w-8 bg-gradient-to-l from-gray-900 to-transparent pointer-events-none" />
     </div>
   );
 };

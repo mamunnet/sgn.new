@@ -24,6 +24,7 @@ export default defineConfig(({ mode }) => {
     base: '/',
     resolve: {
       alias: {
+        '@': resolve(__dirname, './src'),
         'react': resolve(__dirname, 'node_modules/react'),
         'react-dom': resolve(__dirname, 'node_modules/react-dom')
       }
@@ -37,7 +38,11 @@ export default defineConfig(({ mode }) => {
       'process.env.FIREBASE_STORAGE_BUCKET': JSON.stringify(env.VITE_FIREBASE_STORAGE_BUCKET || ''),
       'process.env.FIREBASE_MESSAGING_SENDER_ID': JSON.stringify(env.VITE_FIREBASE_MESSAGING_SENDER_ID || ''),
       'process.env.FIREBASE_APP_ID': JSON.stringify(env.VITE_FIREBASE_APP_ID || ''),
-      'process.env.FIREBASE_MEASUREMENT_ID': JSON.stringify(env.VITE_FIREBASE_MEASUREMENT_ID || '')
+      'process.env.FIREBASE_MEASUREMENT_ID': JSON.stringify(env.VITE_FIREBASE_MEASUREMENT_ID || ''),
+      VITE_ROUTER_FUTURE: {
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      },
     }
   };
 });
