@@ -1,4 +1,4 @@
-import React from 'react';
+import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
@@ -42,16 +42,20 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-const container = document.getElementById('root');
-if (!container) {
-  throw new Error('Failed to find the root element');
+// Get the root element
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+  throw new Error('Root element not found');
 }
 
-const root = createRoot(container);
+// Create root
+const root = createRoot(rootElement);
+
+// Render app
 root.render(
-  <React.StrictMode>
+  <StrictMode>
     <ErrorBoundary>
       <App />
     </ErrorBoundary>
-  </React.StrictMode>
+  </StrictMode>
 );

@@ -11,56 +11,60 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react({
         jsxRuntime: 'automatic',
-        fastRefresh: true,
+        babel: {
+          plugins: ['@babel/plugin-transform-react-jsx']
+        }
       })
     ],
     base: './',
     resolve: {
       alias: {
         '@': resolve(__dirname, './src'),
-      },
+        'react': resolve(__dirname, './node_modules/react'),
+        'react-dom': resolve(__dirname, './node_modules/react-dom'),
+      }
     },
     build: {
       outDir: 'dist',
       assetsDir: 'assets',
       sourcemap: false,
       rollupOptions: {
+        input: {
+          main: resolve(__dirname, 'index.html')
+        },
         output: {
-          manualChunks: (id) => {
-            if (id.includes('node_modules')) {
-              if (id.includes('react')) {
-                return 'react-vendor';
-              }
-              if (id.includes('firebase')) {
-                return 'firebase-vendor';
-              }
-              return 'vendor';
-            }
-          },
-          entryFileNames: 'assets/[name].[hash].js',
-          chunkFileNames: 'assets/[name].[hash].js',
-          assetFileNames: 'assets/[name].[hash].[ext]'
+          manualChunks: {
+            'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+            'firebase-vendor': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
+            'ui-vendor': ['framer-motion', 'lucide-react', 'react-hot-toast']
+          }
         }
       },
       minify: 'terser',
       terserOptions: {
         compress: {
           drop_console: true,
-          drop_debugger: true,
-          pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.trace'],
+          drop_debugger: true
         },
         format: {
           comments: false
-        },
-        mangle: true
+        }
       }
     },
     optimizeDeps: {
-      include: ['react', 'react-dom', 'react-router-dom'],
-      exclude: []
+      include: [
+        'react',
+        'react-dom',
+        'react-router-dom',
+        'firebase/app',
+        'firebase/auth',
+        'firebase/firestore',
+        'firebase/storage'
+      ],
+      force: true
     },
     define: {
-      'process.env': {}
+      'process.env': env
     },
     server: {
       port: 3000,
