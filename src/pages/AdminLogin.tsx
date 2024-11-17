@@ -4,7 +4,7 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { toast } from 'react-hot-toast';
 import { Lock, AlertCircle } from 'lucide-react';
-import { useAuthState } from 'react-firebase-hooks/auth';
+import { useAuth } from '../contexts/AuthContext';
 
 const AdminLogin = () => {
   const [email, setEmail] = useState('');
@@ -13,7 +13,7 @@ const AdminLogin = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
-  const [user] = useAuthState(auth);
+  const { user } = useAuth();
 
   // If already logged in, redirect to admin dashboard
   if (user) {
