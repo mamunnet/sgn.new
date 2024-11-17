@@ -1,11 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Bell } from 'lucide-react';
 import { motion } from 'framer-motion';
 
+interface Notice {
+  id: string;
+  title: string;
+  content: string;
+  date: Date;
+}
+
 const Noticeboard = () => {
-  const [notices, setNotices] = useState([]);
+  const [notices, setNotices] = useState<Notice[]>([]);
 
   useEffect(() => {
     const q = query(collection(db, 'notices'), orderBy('date', 'desc'));
@@ -13,7 +20,7 @@ const Noticeboard = () => {
       const noticeData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
-      }));
+      })) as Notice[];
       setNotices(noticeData);
     });
 
