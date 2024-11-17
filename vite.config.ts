@@ -1,5 +1,6 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+import { resolve } from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -7,17 +8,34 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
   return {
-    plugins: [react()],
+    plugins: [
+      react({
+        jsxRuntime: 'automatic',
+        fastRefresh: true,
+      })
+    ],
     base: './',
+    resolve: {
+      alias: {
+        '@': resolve(__dirname, './src'),
+      },
+    },
     build: {
       outDir: 'dist',
       assetsDir: 'assets',
-      sourcemap: false, // Disable source maps in production
+      sourcemap: false,
       rollupOptions: {
         output: {
-          manualChunks: {
-            vendor: ['react', 'react-dom', 'react-router-dom'],
-            firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
+          manualChunks: (id) => {
+            if (id.includes('node_modules')) {
+              if (id.includes('react')) {
+                return 'react-vendor';
+              }
+              if (id.includes('firebase')) {
+                return 'firebase-vendor';
+              }
+              return 'vendor';
+            }
           },
           entryFileNames: 'assets/[name].[hash].js',
           chunkFileNames: 'assets/[name].[hash].js',
@@ -34,19 +52,15 @@ export default defineConfig(({ mode }) => {
         format: {
           comments: false
         },
-        mangle: {
-          properties: {
-            regex: /^_/
-          }
-        }
+        mangle: true
       }
     },
     optimizeDeps: {
-      include: ['react', 'react-dom', 'react-router-dom', 'firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
-      exclude: ['lucide-react']
+      include: ['react', 'react-dom', 'react-router-dom'],
+      exclude: []
     },
     define: {
-      'process.env': env
+      'process.env': {}
     },
     server: {
       port: 3000,
