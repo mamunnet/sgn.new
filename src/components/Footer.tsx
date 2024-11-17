@@ -15,7 +15,7 @@ const Footer = () => {
               <span className="text-xl font-bold text-white">SGN Academy</span>
             </div>
             <p className="text-sm">
-              Dedicated to providing quality Islamic education while nurturing academic excellence and character development since 1970.
+              Dedicated to providing quality Islamic education while nurturing academic excellence and character development since 2008.
             </p>
             <div className="flex space-x-4">
               <a href="#" className="hover:text-red-500 transition-colors">
