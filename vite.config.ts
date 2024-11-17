@@ -12,6 +12,7 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: 'dist',
       assetsDir: 'assets',
+      sourcemap: false, // Disable source maps in production
       rollupOptions: {
         output: {
           manualChunks: {
@@ -23,12 +24,20 @@ export default defineConfig(({ mode }) => {
           assetFileNames: 'assets/[name].[hash].[ext]'
         }
       },
-      sourcemap: true,
       minify: 'terser',
       terserOptions: {
         compress: {
           drop_console: true,
-          drop_debugger: true
+          drop_debugger: true,
+          pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.trace'],
+        },
+        format: {
+          comments: false
+        },
+        mangle: {
+          properties: {
+            regex: /^_/
+          }
         }
       }
     },
