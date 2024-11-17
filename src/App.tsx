@@ -1,5 +1,4 @@
-import type { FC } from 'react';
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import AOS from 'aos';
@@ -22,7 +21,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './contexts/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
 
-const App: FC = () => {
+const App: React.FC = () => {
   useEffect(() => {
     // Initialize AOS
     try {

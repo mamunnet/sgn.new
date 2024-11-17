@@ -1,4 +1,8 @@
 module.exports = {
-  presets: ['@babel/preset-react'],
-  plugins: ['@babel/plugin-transform-react-jsx']
+  presets: [
+    ['@babel/preset-react', {
+      runtime: 'classic',
+      development: process.env.NODE_ENV === 'development'
+    }]
+  ]
 };

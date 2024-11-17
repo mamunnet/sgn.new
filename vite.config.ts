@@ -9,50 +9,28 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       react({
-        jsxRuntime: 'automatic',
-        jsxImportSource: 'react',
+        include: "**/*.{jsx,tsx}",
         babel: {
-          plugins: ['@babel/plugin-transform-react-jsx']
+          plugins: [
+            ["@babel/plugin-transform-react-jsx", { "runtime": "automatic" }]
+          ]
         }
       })
     ],
+    server: {
+      port: 3000,
+      open: true
+    },
     base: '/',
     resolve: {
       alias: {
-        '@': resolve(__dirname, './src'),
-        'react': resolve(__dirname, './node_modules/react'),
-        'react-dom': resolve(__dirname, './node_modules/react-dom')
+        'react': resolve(__dirname, 'node_modules/react'),
+        'react-dom': resolve(__dirname, 'node_modules/react-dom')
       }
-    },
-    build: {
-      outDir: 'dist',
-      sourcemap: true,
-      rollupOptions: {
-        output: {
-          manualChunks: {
-            'react-vendor': ['react', 'react-dom'],
-            'firebase-vendor': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage']
-          },
-          assetFileNames: 'assets/[hash][extname]',
-          chunkFileNames: 'assets/[hash].js',
-          entryFileNames: 'assets/[hash].js'
-        }
-      },
-      commonjsOptions: {
-        include: [/node_modules/],
-        transformMixedEsModules: true
-      }
-    },
-    optimizeDeps: {
-      include: ['react', 'react-dom']
-    },
-    esbuild: {
-      jsxFactory: 'React.createElement',
-      jsxFragment: 'React.Fragment'
     },
     define: {
       'process.env': {},
-      global: {},
+      global: 'globalThis',
       'process.env.FIREBASE_API_KEY': JSON.stringify(env.VITE_FIREBASE_API_KEY || ''),
       'process.env.FIREBASE_AUTH_DOMAIN': JSON.stringify(env.VITE_FIREBASE_AUTH_DOMAIN || ''),
       'process.env.FIREBASE_PROJECT_ID': JSON.stringify(env.VITE_FIREBASE_PROJECT_ID || ''),

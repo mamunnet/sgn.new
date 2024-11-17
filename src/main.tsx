@@ -1,7 +1,10 @@
-import * as React from 'react';
-import * as ReactDOM from 'react-dom/client';
+import React from 'react';
+import { createRoot } from 'react-dom/client';
 import App from './App';
 import './index.css';
+
+// Ensure React is available globally
+window.React = React;
 
 interface Props {
   children: React.ReactNode;
@@ -57,15 +60,11 @@ class ErrorBoundary extends React.Component<Props, State> {
 }
 
 // Get the root element
-const rootElement = document.getElementById('root');
-if (!rootElement) {
-  throw new Error('Root element not found');
-}
+const container = document.getElementById('root');
+if (!container) throw new Error('Failed to find the root element');
 
-// Create root
-const root = ReactDOM.createRoot(rootElement);
-
-// Render app
+// Create root and render
+const root = createRoot(container);
 root.render(
   <React.StrictMode>
     <ErrorBoundary>
