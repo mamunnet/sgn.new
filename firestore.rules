@@ -1,0 +1,124 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email == string(get(/databases/$(database)/documents/config/admin).data.email);
+    }
+
+    // Public collections - Read only
+    match /notices/{document=**} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+    
+    match /events/{document=**} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+    
+    match /alumni/{document=**} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /banners/{document=**} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    // Protected collections - Auth required
+    match /students/{document=**} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated()
+        && request.resource.data.keys().hasAll([
+          'name', 'admissionNo', 'class', 'section',
+          'dateOfBirth', 'gender', 'fatherName', 'motherName',
+          'address', 'phone', 'createdAt', 'updatedAt'
+        ]);
+      allow update: if isAuthenticated();
+      allow delete: if isAuthenticated();
+    }
+
+    // Staff collection rules
+    match /staff/{document=**} {
+      allow read: if true;  // Public read access
+      allow create, update: if isAuthenticated() 
+        && request.resource.data.keys().hasAll([
+          'name', 'position', 'qualification', 'experience',
+          'expertise', 'email', 'phone', 'bio', 'photoUrl',
+          'joinDate', 'status', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.status in ['active', 'inactive']
+        && request.resource.data.expertise is list;
+      allow delete: if isAuthenticated();
+    }
+
+    // Fees collection rules
+    match /fees/{document=**} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated()
+        && request.resource.data.keys().hasAll([
+          'studentId', 'studentName', 'class', 'month', 'year',
+          'amount', 'dueDate', 'status', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.status in ['paid', 'pending', 'overdue']
+        && request.resource.data.amount is number
+        && request.resource.data.month is number
+        && request.resource.data.year is number;
+      allow delete: if isAuthenticated();
+    }
+
+    // Fee payments collection rules
+    match /feePayments/{document=**} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated()
+        && request.resource.data.keys().hasAll([
+          'feeId', 'studentId', 'amount', 'paymentDate',
+          'paymentMethod', 'receiptNo', 'createdAt'
+        ])
+        && request.resource.data.amount is number;
+      allow update, delete: if false;  // Payments should be immutable
+    }
+
+    // Fee structure collection rules
+    match /feeStructure/{document=**} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    // Certificates collection rules
+    match /certificates/{document=**} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() 
+        && request.resource.data.keys().hasAll([
+          'serialNo', 'date', 'studentId', 'studentName',
+          'currentClass', 'type', 'generatedAt'
+        ])
+        && request.resource.data.type == 'TC'
+        && request.resource.data.serialNo is string
+        && request.resource.data.date is string
+        && request.resource.data.studentId is string
+        && request.resource.data.studentName is string
+        && request.resource.data.currentClass is string
+        && request.resource.data.generatedAt is string;
+      allow update: if isAuthenticated();
+      allow delete: if isAuthenticated();
+    }
+
+    // Config collection for admin settings
+    match /config/{document=**} {
+      allow read: if true;
+      allow write: if false;  // Only modifiable through Firebase Console
+    }
+
+    // Catch-all rule - Deny everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
