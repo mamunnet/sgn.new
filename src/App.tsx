@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 
+// Import components
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -18,11 +19,29 @@ import Admission from './pages/Admission';
 import FeesStructure from './pages/FeesStructure';
 import ProtectedRoute from './components/ProtectedRoute';
 
+// Add error tracking
+const logError = (error: Error, errorInfo: React.ErrorInfo) => {
+  console.error('Application Error:', error);
+  console.error('Error Info:', errorInfo);
+};
+
 function App() {
   useEffect(() => {
-    AOS.init({
-      duration: 1000,
-      once: true,
+    // Initialize AOS
+    try {
+      AOS.init({
+        duration: 1000,
+        once: true,
+      });
+    } catch (error) {
+      console.error('Error initializing AOS:', error);
+    }
+
+    // Log environment check
+    console.log('Environment Check:', {
+      nodeEnv: process.env.NODE_ENV,
+      hasFirebaseKey: !!import.meta.env.VITE_FIREBASE_API_KEY,
+      baseUrl: window.location.origin,
     });
   }, []);
 
