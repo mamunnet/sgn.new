@@ -10,8 +10,10 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       react({
-        jsxRuntime: 'automatic',
+        jsxRuntime: 'classic',
+        jsxImportSource: 'react',
         babel: {
+          presets: ['@babel/preset-react'],
           plugins: ['@babel/plugin-transform-react-jsx']
         }
       })
@@ -45,9 +47,6 @@ export default defineConfig(({ mode }) => {
         compress: {
           drop_console: true,
           drop_debugger: true
-        },
-        format: {
-          comments: false
         }
       }
     },
@@ -63,16 +62,12 @@ export default defineConfig(({ mode }) => {
       ],
       force: true
     },
+    esbuild: {
+      jsxFactory: 'React.createElement',
+      jsxFragment: 'React.Fragment'
+    },
     define: {
       'process.env': env
-    },
-    server: {
-      port: 3000,
-      strictPort: true
-    },
-    preview: {
-      port: 3000,
-      strictPort: true
     }
   };
 });

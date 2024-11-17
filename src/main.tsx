@@ -1,5 +1,5 @@
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
+import React from 'react';
+import ReactDOM from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
@@ -49,13 +49,13 @@ if (!rootElement) {
 }
 
 // Create root
-const root = createRoot(rootElement);
+const root = ReactDOM.createRoot(rootElement);
 
 // Render app
 root.render(
-  <StrictMode>
+  <React.StrictMode>
     <ErrorBoundary>
       <App />
     </ErrorBoundary>
-  </StrictMode>
+  </React.StrictMode>
 );
