@@ -7,42 +7,48 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   
   return {
-    plugins: [react()],
-    base: './',
+    plugins: [
+      react({
+        jsxRuntime: 'automatic',
+        jsxImportSource: 'react',
+        babel: {
+          plugins: ['@babel/plugin-transform-react-jsx']
+        }
+      })
+    ],
+    base: '/',
     resolve: {
       alias: {
-        '@': resolve(__dirname, './src')
+        '@': resolve(__dirname, './src'),
+        'react': resolve(__dirname, './node_modules/react'),
+        'react-dom': resolve(__dirname, './node_modules/react-dom')
       }
     },
     build: {
       outDir: 'dist',
-      sourcemap: false,
+      sourcemap: true,
       rollupOptions: {
         output: {
-          manualChunks(id) {
-            if (id.includes('node_modules')) {
-              if (id.includes('react') || id.includes('scheduler')) {
-                return 'react';
-              } else if (id.includes('firebase')) {
-                return 'firebase';
-              } else if (id.includes('@')) {
-                return 'vendor';
-              }
-              return 'vendor';
-            }
+          manualChunks: {
+            'react-vendor': ['react', 'react-dom'],
+            'firebase-vendor': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage']
           },
           assetFileNames: 'assets/[hash][extname]',
           chunkFileNames: 'assets/[hash].js',
           entryFileNames: 'assets/[hash].js'
         }
       },
-      minify: 'terser',
-      terserOptions: {
-        compress: {
-          drop_console: true,
-          drop_debugger: true
-        }
+      commonjsOptions: {
+        include: [/node_modules/],
+        transformMixedEsModules: true
       }
+    },
+    optimizeDeps: {
+      include: ['react', 'react-dom']
+    },
+    esbuild: {
+      jsxFactory: 'React.createElement',
+      jsxFragment: 'React.Fragment'
     },
     define: {
       'process.env': {},
