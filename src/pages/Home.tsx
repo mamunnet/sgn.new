@@ -14,12 +14,14 @@ const Home = () => {
       <Noticeboard />
       <Welcome />
       <Services />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid md:grid-cols-2 gap-6 mb-12">
-          <EventList />
-          <VisionMission />
+      <div className="bg-gray-50 py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid md:grid-cols-2 gap-8 mb-16">
+            <EventList />
+            <VisionMission />
+          </div>
+          <AlumniList />
         </div>
-        <AlumniList />
       </div>
     </div>
   );
