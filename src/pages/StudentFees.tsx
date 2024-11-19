@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import { collection, query, where, getDocs, addDoc, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { Search, AlertCircle, CreditCard, Calendar, IndianRupee, User, BookOpen, Hash } from 'lucide-react';
+import { Search, AlertCircle, CreditCard, Calendar, IndianRupee, User, BookOpen, Hash, FileText, DollarSign, ClipboardCheck } from 'lucide-react';
 import PaymentModal from '../components/admin/PaymentModal';
 import FeeReceiptModal from '../components/admin/FeeReceiptModal';
 import { initializeRazorpay, openRazorpayCheckout, RazorpayOptions } from '../utils/razorpay';
@@ -256,7 +256,7 @@ const StudentFees = () => {
         </div>
 
         {/* Student Details and Fees */}
-        {studentData && (
+        {studentData ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -371,8 +371,72 @@ const StudentFees = () => {
               )}
             </div>
           </motion.div>
-        )}
+        ) : (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-12"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+              <div className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
+                <div className="bg-blue-100 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-4">
+                  <FileText className="h-6 w-6 text-blue-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-2">View Fee Details</h3>
+                <p className="text-gray-600">Access complete fee history and payment records for any student</p>
+              </div>
 
+              <div className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
+                <div className="bg-green-100 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-4">
+                  <DollarSign className="h-6 w-6 text-green-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-2">Process Payments</h3>
+                <p className="text-gray-600">Record fee payments and generate digital receipts instantly</p>
+              </div>
+
+              <div className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
+                <div className="bg-purple-100 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-4">
+                  <ClipboardCheck className="h-6 w-6 text-purple-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-2">Track Due Dates</h3>
+                <p className="text-gray-600">Monitor payment schedules and manage due dates efficiently</p>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl p-8 shadow-lg max-w-2xl mx-auto">
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">How to Use</h2>
+              <div className="space-y-4 text-left">
+                <div className="flex items-start gap-3">
+                  <div className="bg-blue-100 rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 mt-1">
+                    <span className="text-blue-600 font-semibold">1</span>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-800">Enter Admission Number</h3>
+                    <p className="text-gray-600">Type the student's admission number in the search box above</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="bg-blue-100 rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 mt-1">
+                    <span className="text-blue-600 font-semibold">2</span>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-800">View Details</h3>
+                    <p className="text-gray-600">Access student information and fee payment history</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="bg-blue-100 rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 mt-1">
+                    <span className="text-blue-600 font-semibold">3</span>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-800">Process Payment</h3>
+                    <p className="text-gray-600">Record payments and generate digital receipts</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
         {/* Payment Modal */}
         {showPaymentModal && selectedFee && (
           <PaymentModal
@@ -413,7 +477,7 @@ const StudentFees = () => {
               animate={{ opacity: 1, scale: 1 }}
               className="bg-white rounded-xl p-6 w-full max-w-md"
             >
-              <h2 className="text-2xl font-semibold mb-4 text-gray-800">Pay Advance Fee</h2>
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">Pay Advance Fee</h2>
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Amount (₹)
