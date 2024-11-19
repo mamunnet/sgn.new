@@ -7,14 +7,12 @@ import {
   Calendar, 
   Search, 
   Printer, 
-  Download, 
+  Filter,
   AlertCircle,
   CheckCircle,
-  Clock,
-  Filter
+  Clock
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import type { Fee, FeePayment, Student } from '../../types/index';
+import type { Fee, FeePayment, Student, AdditionalFee } from '../../types/index';
 import FeeReceiptModal from './FeeReceiptModal';
 
 const FeesManager = () => {
@@ -28,10 +26,102 @@ const FeesManager = () => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<FeePayment | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  // Fee structure constants
+  const CLASS_FEES = {
+    'PLAYGROUP': 250,
+    'NURSERY': 250,
+    'KG': 250,
+    'I': 350,
+    'II': 350,
+    'III': 350,
+    'IV': 350,
+    'V': 350,
+    'VI': 450,
+    'VII': 450,
+    'VIII': 450,
+    'IX': 450,
+    'X': 450,
+  } as const;
+
+  // Additional fees structure
+  const ADDITIONAL_FEES = {
+    'REGISTRATION': { amount: 200, type: 'one-time' },
+    'LABORATORY': { amount: 150, type: 'annual' },
+    'LIBRARY': { amount: 100, type: 'annual' },
+    'ACTIVITY': { amount: 200, type: 'annual' }
+  } as const;
+
+  // Discount types
+  const DISCOUNT_TYPES = {
+    'SIBLING': 10,
+    'MERIT': 15,
+    'STAFF_WARD': 20
+  } as const;
+
+  const calculateBaseFee = (studentClass: string): number => {
+    const normalizedClass = studentClass.toUpperCase();
+    return CLASS_FEES[normalizedClass as keyof typeof CLASS_FEES] || 350; // Default to 350 if class not found
+  };
+
+  const generateFee = async (student: Student) => {
+    try {
+      setIsGenerating(true);
+      const currentDate = new Date();
+      const month = currentDate.getMonth() + 1;
+      const year = currentDate.getFullYear();
+
+      // Check if fee already exists for this month
+      const existingFeeQuery = query(
+        collection(db, 'fees'),
+        where('studentId', '==', student.id),
+        where('month', '==', month),
+        where('year', '==', year)
+      );
+
+      const existingFeeDocs = await getDocs(existingFeeQuery);
+      if (!existingFeeDocs.empty) {
+        toast.error('Fee already generated for this month');
+        return;
+      }
+
+      const baseFee = calculateBaseFee(student.class);
+      const dueDate = new Date(year, month - 1, 10); // Due date is 10th of each month
+
+      const feeData: Omit<Fee, 'id'> = {
+        studentId: student.id,
+        studentName: student.name,
+        class: student.class,
+        month,
+        year,
+        amount: baseFee,
+        finalAmount: baseFee,
+        totalAmount: baseFee,
+        dueDate: dueDate.toISOString(),
+        status: 'pending',
+        createdAt: currentDate.toISOString(),
+        updatedAt: currentDate.toISOString()
+      };
+
+      const feeRef = await addDoc(collection(db, 'fees'), feeData);
+      const newFee: Fee = { id: feeRef.id, ...feeData };
+      
+      setFees(prevFees => [...prevFees, newFee]);
+      toast.success('Fee generated successfully');
+    } catch (error) {
+      console.error('Error generating fee:', error);
+      toast.error('Error generating fee');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setLoading(true);
+        
         // Fetch students
         const studentsSnapshot = await getDocs(collection(db, 'students'));
         const studentsData = studentsSnapshot.docs.map(doc => ({
@@ -40,7 +130,7 @@ const FeesManager = () => {
         })) as Student[];
         setStudents(studentsData);
 
-        // Fetch fees for current month
+        // Fetch fees for selected month and year
         const feesQuery = query(
           collection(db, 'fees'),
           where('month', '==', selectedMonth),
@@ -53,18 +143,26 @@ const FeesManager = () => {
         })) as Fee[];
         setFees(feesData);
 
-        // Fetch payments
-        const paymentsSnapshot = await getDocs(collection(db, 'feePayments'));
-        const paymentsData = paymentsSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as FeePayment[];
-        setPayments(paymentsData);
-
-        setLoading(false);
+        // Fetch all payments for the fees
+        const feeIds = feesData.map(fee => fee.id);
+        if (feeIds.length > 0) {
+          const paymentsQuery = query(
+            collection(db, 'feePayments'),
+            where('feeId', 'in', feeIds)
+          );
+          const paymentsSnapshot = await getDocs(paymentsQuery);
+          const paymentsData = paymentsSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          })) as FeePayment[];
+          setPayments(paymentsData);
+        } else {
+          setPayments([]);
+        }
       } catch (error) {
         console.error('Error fetching data:', error);
-        toast.error('Error loading fees data');
+        toast.error('Error loading data');
+      } finally {
         setLoading(false);
       }
     };
@@ -72,75 +170,25 @@ const FeesManager = () => {
     fetchData();
   }, [selectedMonth, selectedYear]);
 
-  const generateMonthlyFees = async () => {
-    try {
-      const batch = [];
-      
-      for (const student of students) {
-        // Check if fee already exists for this student and month
-        const existingFee = fees.find(f => 
-          f.studentId === student.id && 
-          f.month === selectedMonth && 
-          f.year === selectedYear
-        );
-
-        if (!existingFee) {
-          // Calculate due date (15th of the month)
-          const dueDate = new Date(selectedYear, selectedMonth - 1, 15);
-          
-          const feeData = {
-            studentId: student.id,
-            studentName: student.name,
-            class: student.class,
-            month: selectedMonth,
-            year: selectedYear,
-            amount: 1000, // Get from fee structure based on class
-            dueDate: dueDate.toISOString(),
-            status: 'pending' as const,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          };
-
-          batch.push(addDoc(collection(db, 'fees'), feeData));
-        }
-      }
-
-      await Promise.all(batch);
-      toast.success('Monthly fees generated successfully');
-      
-      // Refresh fees data
-      const feesQuery = query(
-        collection(db, 'fees'),
-        where('month', '==', selectedMonth),
-        where('year', '==', selectedYear)
-      );
-      const feesSnapshot = await getDocs(feesQuery);
-      const feesData = feesSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Fee[];
-      setFees(feesData);
-    } catch (error) {
-      console.error('Error generating fees:', error);
-      toast.error('Error generating monthly fees');
-    }
-  };
-
   const recordPayment = async (fee: Fee) => {
     try {
-      const paymentData = {
+      const paymentData: Omit<FeePayment, 'id'> = {
         feeId: fee.id,
         studentId: fee.studentId,
-        amount: fee.amount,
+        amount: fee.finalAmount || fee.amount,
         paymentDate: new Date().toISOString(),
         paymentMethod: 'cash',
         receiptNo: `RCP${Date.now()}`,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        discountApplied: fee.discount,
+        discountType: fee.discountType,
+        additionalFees: fee.additionalFees,
+        totalAmount: fee.totalAmount || fee.amount
       };
 
       // Add payment record
       const paymentRef = await addDoc(collection(db, 'feePayments'), paymentData);
-      const payment = { id: paymentRef.id, ...paymentData };
+      const payment: FeePayment = { id: paymentRef.id, ...paymentData };
 
       // Update fee status
       await updateDoc(doc(db, 'fees', fee.id), {
@@ -149,10 +197,10 @@ const FeesManager = () => {
       });
 
       // Update local state
-      setPayments([...payments, payment]);
-      setFees(fees.map(f => 
-        f.id === fee.id ? { ...f, status: 'paid' } : f
-      ));
+      setPayments(prevPayments => [...prevPayments, payment]);
+      setFees(prevFees => 
+        prevFees.map(f => f.id === fee.id ? { ...f, status: 'paid' } : f)
+      );
 
       // Show receipt
       setSelectedPayment(payment);
@@ -162,6 +210,70 @@ const FeesManager = () => {
     } catch (error) {
       console.error('Error recording payment:', error);
       toast.error('Error recording payment');
+    }
+  };
+
+  const applyDiscount = async (fee: Fee, discountType: keyof typeof DISCOUNT_TYPES) => {
+    try {
+      const discountPercent = DISCOUNT_TYPES[discountType];
+      const discountAmount = (fee.amount * discountPercent) / 100;
+      const finalAmount = fee.amount - discountAmount;
+
+      await updateDoc(doc(db, 'fees', fee.id), {
+        discount: discountAmount,
+        discountType,
+        finalAmount,
+        updatedAt: new Date().toISOString()
+      });
+
+      // Update local state
+      setFees(fees.map(f => 
+        f.id === fee.id ? { 
+          ...f, 
+          discount: discountAmount, 
+          discountType, 
+          finalAmount 
+        } : f
+      ));
+
+      toast.success(`${discountType} discount applied successfully`);
+    } catch (error) {
+      console.error('Error applying discount:', error);
+      toast.error('Error applying discount');
+    }
+  };
+
+  const addAdditionalFee = async (fee: Fee, feeType: AdditionalFee['type']) => {
+    try {
+      const additionalFee = ADDITIONAL_FEES[feeType];
+      const newAdditionalFees: AdditionalFee[] = [...(fee.additionalFees || []), {
+        type: feeType,
+        amount: additionalFee.amount,
+        feeType: additionalFee.type as 'one-time' | 'annual' | 'monthly'
+      }];
+
+      const totalAdditionalAmount = newAdditionalFees.reduce((sum, fee) => sum + fee.amount, 0);
+      const totalAmount = fee.amount + totalAdditionalAmount;
+
+      await updateDoc(doc(db, 'fees', fee.id), {
+        additionalFees: newAdditionalFees,
+        totalAmount,
+        updatedAt: new Date().toISOString()
+      });
+
+      // Update local state
+      setFees(fees.map(f => 
+        f.id === fee.id ? { 
+          ...f, 
+          additionalFees: newAdditionalFees,
+          totalAmount 
+        } : f
+      ));
+
+      toast.success(`${feeType} fee added successfully`);
+    } catch (error) {
+      console.error('Error adding additional fee:', error);
+      toast.error('Error adding additional fee');
     }
   };
 
@@ -190,15 +302,27 @@ const FeesManager = () => {
   });
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Fees Management</h2>
         <button
-          onClick={generateMonthlyFees}
-          className="bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 flex items-center"
+          onClick={() => generateFee(students[0])}
+          disabled={loading || isGenerating}
+          className={`flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors ${
+            loading || isGenerating ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
         >
-          <DollarSign className="h-5 w-5 mr-2" />
-          Generate Monthly Fees
+          {loading || isGenerating ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+              Generating...
+            </>
+          ) : (
+            <>
+              <Calendar className="h-5 w-5 mr-2" />
+              Generate Fee
+            </>
+          )}
         </button>
       </div>
 
@@ -382,7 +506,7 @@ const FeesManager = () => {
                     {fee.class}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ₹{fee.amount.toLocaleString()}
+                    ₹{fee.finalAmount || fee.amount}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {new Date(fee.dueDate).toLocaleDateString()}
@@ -418,6 +542,24 @@ const FeesManager = () => {
                           <Printer className="h-5 w-5" />
                         </button>
                       )}
+                      {fee.status !== 'paid' && (
+                        <button
+                          onClick={() => applyDiscount(fee, 'SIBLING')}
+                          className="text-orange-600 hover:text-orange-900"
+                          title="Apply Sibling Discount"
+                        >
+                          <Filter className="h-5 w-5" />
+                        </button>
+                      )}
+                      {fee.status !== 'paid' && (
+                        <button
+                          onClick={() => addAdditionalFee(fee, 'REGISTRATION')}
+                          className="text-purple-600 hover:text-purple-900"
+                          title="Add Registration Fee"
+                        >
+                          <Calendar className="h-5 w-5" />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -434,19 +576,36 @@ const FeesManager = () => {
       </div>
 
       {/* Receipt Modal */}
-      <AnimatePresence>
-        {showReceiptModal && selectedPayment && (
+      {showReceiptModal && selectedPayment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <FeeReceiptModal
             payment={selectedPayment}
-            student={students.find(s => s.id === selectedPayment.studentId)!}
-            fee={fees.find(f => f.id === selectedPayment.feeId)!}
-            onClose={() => {
-              setShowReceiptModal(false);
-              setSelectedPayment(null);
+            student={students.find(s => s.id === selectedPayment.studentId) || {
+              id: '',
+              name: '',
+              admissionNo: '',
+              class: '',
+              section: '',
+              createdAt: '',
+              updatedAt: ''
             }}
+            fee={fees.find(f => f.id === selectedPayment.feeId) || {
+              id: '',
+              studentId: '',
+              studentName: '',
+              class: '',
+              month: new Date().getMonth() + 1,
+              year: new Date().getFullYear(),
+              amount: 0,
+              dueDate: new Date().toISOString(),
+              status: 'pending',
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            }}
+            onClose={() => setShowReceiptModal(false)}
           />
-        )}
-      </AnimatePresence>
+        </div>
+      )}
     </div>
   );
 };

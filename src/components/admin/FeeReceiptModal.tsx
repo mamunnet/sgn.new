@@ -45,7 +45,7 @@ const FeeReceiptModal: React.FC<FeeReceiptModalProps> = ({
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       
       pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-      pdf.save(`FeeReceipt_${student.name}_${payment.receiptNo}.pdf`);
+      pdf.save(`FeeReceipt_${student?.name || 'N/A'}_${payment?.receiptNo || 'N/A'}.pdf`);
     } catch (error) {
       console.error('Error generating PDF:', error);
     }
@@ -87,11 +87,11 @@ const FeeReceiptModal: React.FC<FeeReceiptModalProps> = ({
             <div className="flex justify-between mb-6">
               <div>
                 <h2 className="text-xl font-bold text-gray-900">FEE RECEIPT</h2>
-                <p className="text-gray-600">Receipt No: {payment.receiptNo}</p>
+                <p className="text-gray-600">Receipt No: {payment?.receiptNo || 'N/A'}</p>
               </div>
               <div className="text-right">
                 <p className="text-gray-600">
-                  Date: {new Date(payment.paymentDate).toLocaleDateString()}
+                  Date: {payment?.paymentDate ? new Date(payment.paymentDate).toLocaleDateString() : 'N/A'}
                 </p>
               </div>
             </div>
@@ -100,20 +100,20 @@ const FeeReceiptModal: React.FC<FeeReceiptModalProps> = ({
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div>
                 <p className="text-gray-600">Student Name:</p>
-                <p className="font-semibold">{student.name}</p>
+                <p className="font-semibold">{student?.name || 'N/A'}</p>
               </div>
               <div>
                 <p className="text-gray-600">Admission No:</p>
-                <p className="font-semibold">{student.admissionNo}</p>
+                <p className="font-semibold">{student?.admissionNo || 'N/A'}</p>
               </div>
               <div>
                 <p className="text-gray-600">Class:</p>
-                <p className="font-semibold">{student.class} - {student.section}</p>
+                <p className="font-semibold">{student?.class || 'N/A'} - {student?.section || 'N/A'}</p>
               </div>
               <div>
                 <p className="text-gray-600">Month/Year:</p>
                 <p className="font-semibold">
-                  {new Date(0, fee.month - 1).toLocaleString('default', { month: 'long' })} {fee.year}
+                  {fee?.month ? new Date(0, fee.month - 1).toLocaleString('default', { month: 'long' }) : 'N/A'} {fee?.year || new Date().getFullYear()}
                 </p>
               </div>
             </div>
@@ -122,18 +122,35 @@ const FeeReceiptModal: React.FC<FeeReceiptModalProps> = ({
             <div className="border-t border-gray-200 pt-6 mb-6">
               <div className="flex justify-between items-center mb-4">
                 <span className="text-gray-600">Tuition Fee</span>
-                <span className="font-semibold">₹{fee.amount.toLocaleString()}</span>
+                <span className="font-semibold">₹{(fee?.amount || 0).toLocaleString()}</span>
               </div>
-              <div className="flex justify-between items-center font-bold text-lg">
+
+              {/* Additional Fees */}
+              {payment?.additionalFees?.map((additionalFee, index) => (
+                <div key={index} className="flex justify-between items-center mb-4">
+                  <span className="text-gray-600">{additionalFee.type} Fee ({additionalFee.feeType})</span>
+                  <span className="font-semibold">₹{additionalFee.amount.toLocaleString()}</span>
+                </div>
+              ))}
+
+              {/* Discount if applied */}
+              {payment?.discountApplied && payment.discountApplied > 0 && (
+                <div className="flex justify-between items-center mb-4 text-red-600">
+                  <span>{payment.discountType || 'Discount'}</span>
+                  <span>-₹{payment.discountApplied.toLocaleString()}</span>
+                </div>
+              )}
+
+              <div className="flex justify-between items-center font-bold text-lg border-t border-gray-200 pt-4">
                 <span>Total Amount</span>
-                <span>₹{payment.amount.toLocaleString()}</span>
+                <span>₹{(payment?.totalAmount || 0).toLocaleString()}</span>
               </div>
             </div>
 
             {/* Payment Method */}
             <div className="mb-6">
               <p className="text-gray-600">Payment Method:</p>
-              <p className="font-semibold capitalize">{payment.paymentMethod}</p>
+              <p className="font-semibold capitalize">{payment?.paymentMethod || 'N/A'}</p>
             </div>
 
             {/* Amount in Words */}
@@ -144,7 +161,7 @@ const FeeReceiptModal: React.FC<FeeReceiptModalProps> = ({
                   style: 'currency',
                   currency: 'INR',
                   maximumFractionDigits: 0,
-                }).format(payment.amount).replace(/^.*?\s/, '')} Only
+                }).format(payment?.totalAmount || 0).replace(/^.*?\s/, '')} Only
               </p>
             </div>
 
