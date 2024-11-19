@@ -16,6 +16,12 @@ service firebase.storage {
         && request.resource.size < 10 * 1024 * 1024;  // 10MB max
     }
 
+    // Allow access to all authenticated users
+    match /{allPaths=**} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
     // Allow public read access for banners
     match /banners/{allPaths=**} {
       allow read: if true;
@@ -42,14 +48,20 @@ service firebase.storage {
 
     // Staff photos rules
     match /staff/{allPaths=**} {
-      allow read: if true;  // Public read access
+      allow read: if true;
       allow write: if isAuthenticated() && isValidImage();
     }
 
     // Fee receipts and documents
     match /fees/{allPaths=**} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && isValidPDF();
+      allow write: if isAuthenticated();
+    }
+
+    // Gallery photos
+    match /gallery/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAuthenticated();
     }
   }
 }

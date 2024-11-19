@@ -33,6 +33,9 @@ import StudentList from './components/admin/StudentList';
 import AdminProfile from './components/admin/AdminProfile';
 import StaffManager from './components/admin/StaffManager';
 import FeesManager from './components/admin/FeesManager';
+import StudentView from './components/admin/StudentView';
+import TCPreview from './components/admin/TCPreview';
+import GalleryManager from './components/admin/GalleryManager';
 
 const App: React.FC = () => {
   useEffect(() => {
@@ -87,9 +90,12 @@ const App: React.FC = () => {
                             <Route path="events" element={<EventManager />} />
                             <Route path="alumni" element={<AlumniManager />} />
                             <Route path="tc-generator" element={<TCGenerator />} />
+                            <Route path="tc-preview" element={<TCPreview />} />
+                            <Route path="gallery" element={<GalleryManager />} />
                             <Route path="students">
                               <Route path="admission" element={<StudentAdmission />} />
                               <Route path="list" element={<StudentList />} />
+                              <Route path="view" element={<StudentView />} />
                             </Route>
                             <Route path="staff" element={<StaffManager />} />
                             <Route path="fees" element={<FeesManager />} />

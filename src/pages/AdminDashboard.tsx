@@ -17,7 +17,8 @@ import {
   ClipboardList,
   Settings,
   UserCog,
-  DollarSign
+  DollarSign,
+  ImageIcon
 } from 'lucide-react';
 
 const AdminDashboard = () => {
@@ -165,6 +166,16 @@ const AdminDashboard = () => {
           >
             <Users className="h-5 w-5 mr-3" />
             Alumni
+          </Link>
+          
+          <Link
+            to="gallery"
+            className={`flex items-center px-6 py-3 text-white/90 hover:bg-white/10 transition-colors ${
+              isActive('gallery') ? 'bg-white/20' : ''
+            }`}
+          >
+            <ImageIcon className="h-5 w-5 mr-3" />
+            Gallery
           </Link>
           
           <Link
