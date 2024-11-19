@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import { collection, query, where, getDocs, addDoc, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { Search, AlertCircle } from 'lucide-react';
+import { Search, AlertCircle, CreditCard, Calendar, IndianRupee, User, BookOpen, Hash } from 'lucide-react';
 import PaymentModal from '../components/admin/PaymentModal';
 import FeeReceiptModal from '../components/admin/FeeReceiptModal';
 import { initializeRazorpay, openRazorpayCheckout, RazorpayOptions } from '../utils/razorpay';
@@ -212,31 +212,45 @@ const StudentFees = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-8">
+      <div className="max-w-5xl mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Student Fee Payment</h1>
-          <p className="text-gray-600">Enter admission number to view and pay fees</p>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Student Fee Management</h1>
+          <p className="text-lg text-gray-600">Search student by admission number to manage fees</p>
         </div>
 
         {/* Search Form */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+        <div className="bg-white rounded-xl shadow-lg p-6 mb-8 transform hover:shadow-xl transition-all duration-300">
           <form onSubmit={handleSearch} className="flex gap-4">
-            <input
-              type="text"
-              value={admissionNumber}
-              onChange={(e) => setAdmissionNumber(e.target.value)}
-              placeholder="Enter Admission Number"
-              className="flex-1 rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <div className="relative flex-1">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                value={admissionNumber}
+                onChange={(e) => setAdmissionNumber(e.target.value)}
+                placeholder="Enter Admission Number"
+                className="w-full pl-10 rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
             <button
               type="submit"
               disabled={loading}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+              className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
             >
-              <Search className="h-5 w-5" />
-              {loading ? 'Searching...' : 'Search'}
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  <span>Searching...</span>
+                </>
+              ) : (
+                <>
+                  <Search className="h-5 w-5" />
+                  <span>Search</span>
+                </>
+              )}
             </button>
           </form>
         </div>
@@ -249,154 +263,193 @@ const StudentFees = () => {
             className="space-y-6"
           >
             {/* Student Info */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold mb-4">Student Information</h2>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-600">Name</p>
-                  <p className="font-medium">{studentData.name}</p>
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h2 className="text-2xl font-semibold mb-6 text-gray-800 flex items-center gap-2">
+                <User className="h-6 w-6 text-blue-600" />
+                Student Information
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex items-center gap-2 text-gray-600 mb-1">
+                    <User className="h-4 w-4" />
+                    <p className="text-sm">Name</p>
+                  </div>
+                  <p className="font-medium text-lg">{studentData.name}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600">Class</p>
-                  <p className="font-medium">{studentData.class}</p>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex items-center gap-2 text-gray-600 mb-1">
+                    <BookOpen className="h-4 w-4" />
+                    <p className="text-sm">Class</p>
+                  </div>
+                  <p className="font-medium text-lg">{studentData.class}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600">Admission Number</p>
-                  <p className="font-medium">{studentData.admissionNo}</p>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex items-center gap-2 text-gray-600 mb-1">
+                    <Hash className="h-4 w-4" />
+                    <p className="text-sm">Admission Number</p>
+                  </div>
+                  <p className="font-medium text-lg">{studentData.admissionNo}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600">Roll Number</p>
-                  <p className="font-medium">{studentData.rollNumber}</p>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex items-center gap-2 text-gray-600 mb-1">
+                    <Hash className="h-4 w-4" />
+                    <p className="text-sm">Roll Number</p>
+                  </div>
+                  <p className="font-medium text-lg">{studentData.rollNumber || 'Not assigned'}</p>
                 </div>
               </div>
             </div>
 
             {/* Fee Details */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">Fee Details</h2>
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-semibold text-gray-800 flex items-center gap-2">
+                  <IndianRupee className="h-6 w-6 text-blue-600" />
+                  Fee Details
+                </h2>
                 <button
                   onClick={() => setShowAdvanceModal(true)}
-                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                  className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
                 >
+                  <CreditCard className="h-5 w-5" />
                   Pay Advance
                 </button>
               </div>
               {studentData.fees && studentData.fees.length > 0 ? (
-                <div className="space-y-4">
+                <div className="grid gap-4">
                   {studentData.fees.map((fee: any) => (
                     <div
                       key={fee.id}
-                      className="border rounded-lg p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+                      className="border border-gray-200 rounded-lg p-5 hover:border-blue-500 transition-colors"
                     >
-                      <div>
-                        <h3 className="font-semibold text-lg">{fee.type}</h3>
-                        <p className="text-gray-600">Due Date: {fee.dueDate}</p>
-                        <p className="text-lg font-bold text-blue-600">₹{fee.amount}</p>
-                      </div>
-                      {fee.status === 'pending' && (
-                        <button
-                          onClick={() => handlePayNow(fee)}
-                          className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto"
-                        >
-                          Pay Now
-                        </button>
-                      )}
-                      {fee.status === 'paid' && (
-                        <div className="flex flex-col sm:flex-row gap-2">
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                            Paid
-                          </span>
-                          <button
-                            onClick={() => handleViewReceipt(fee)}
-                            className="text-blue-600 hover:text-blue-700 underline text-sm"
-                          >
-                            View Receipt
-                          </button>
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-800 mb-1">{fee.type}</h3>
+                          <div className="flex items-center gap-4 text-gray-600">
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-4 w-4" />
+                              <span>Due: {fee.dueDate}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <IndianRupee className="h-4 w-4" />
+                              <span className="text-lg font-bold text-blue-600">₹{fee.amount}</span>
+                            </div>
+                          </div>
                         </div>
-                      )}
+                        <div className="flex items-center gap-3">
+                          {fee.status === 'pending' ? (
+                            <button
+                              onClick={() => handlePayNow(fee)}
+                              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                            >
+                              <CreditCard className="h-5 w-5" />
+                              Pay Now
+                            </button>
+                          ) : (
+                            <>
+                              <span className="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                Paid
+                              </span>
+                              <button
+                                onClick={() => handleViewReceipt(fee)}
+                                className="text-blue-600 hover:text-blue-700 font-medium"
+                              >
+                                View Receipt
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600">No pending fees found</p>
+                  <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                  <p className="text-gray-600">No fee records found</p>
                 </div>
               )}
             </div>
           </motion.div>
         )}
-      </div>
 
-      {/* Payment Modal */}
-      {showPaymentModal && selectedFee && studentData && (
-        <PaymentModal
-          isOpen={showPaymentModal}
-          onClose={() => {
-            setShowPaymentModal(false);
-            setSelectedFee(null);
-          }}
-          student={studentData}
-          feeAmount={selectedFee.amount}
-          feeType={selectedFee.type}
-          academicYear={selectedFee.academicYear}
-          month={selectedFee.month}
-          onPaymentSuccess={() => {
-            setShowPaymentModal(false);
-            setSelectedFee(null);
-            handleSearch(new Event('submit') as any);
-          }}
-        />
-      )}
+        {/* Payment Modal */}
+        {showPaymentModal && selectedFee && (
+          <PaymentModal
+            isOpen={showPaymentModal}
+            onClose={() => {
+              setShowPaymentModal(false);
+              setSelectedFee(null);
+            }}
+            student={studentData}
+            feeAmount={selectedFee.amount}
+            feeType={selectedFee.type}
+            academicYear={selectedFee.academicYear}
+            month={selectedFee.month}
+            onPaymentSuccess={() => {
+              handleSearch({ preventDefault: () => {} } as React.FormEvent);
+            }}
+          />
+        )}
 
-      {/* Receipt Modal */}
-      {showReceiptModal && selectedPayment && studentData && (
-        <FeeReceiptModal
-          payment={selectedPayment}
-          student={studentData}
-          fee={selectedFee}
-          onClose={() => {
-            setShowReceiptModal(false);
-            setSelectedPayment(null);
-          }}
-        />
-      )}
+        {/* Receipt Modal */}
+        {showReceiptModal && selectedPayment && (
+          <FeeReceiptModal
+            payment={selectedPayment}
+            student={studentData}
+            fee={selectedFee}
+            onClose={() => {
+              setShowReceiptModal(false);
+              setSelectedPayment(null);
+            }}
+          />
+        )}
 
-      {/* Advance Payment Modal */}
-      {showAdvanceModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-semibold mb-4">Pay Advance Fee</h2>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Amount (₹)
-              </label>
-              <input
-                type="number"
-                value={advanceAmount}
-                onChange={(e) => setAdvanceAmount(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter amount"
-              />
-            </div>
-            <div className="flex justify-end gap-4">
-              <button
-                onClick={() => setShowAdvanceModal(false)}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleAdvancePayment}
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Pay Now
-              </button>
-            </div>
+        {/* Advance Payment Modal */}
+        {showAdvanceModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-white rounded-xl p-6 w-full max-w-md"
+            >
+              <h2 className="text-2xl font-semibold mb-4 text-gray-800">Pay Advance Fee</h2>
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Amount (₹)
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <IndianRupee className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="number"
+                    value={advanceAmount}
+                    onChange={(e) => setAdvanceAmount(e.target.value)}
+                    className="w-full pl-10 rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter amount"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-4">
+                <button
+                  onClick={() => setShowAdvanceModal(false)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAdvancePayment}
+                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                >
+                  <CreditCard className="h-5 w-5" />
+                  Pay Now
+                </button>
+              </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
