@@ -224,6 +224,28 @@ const Contact = () => {
               </form>
             </div>
           </motion.div>
+
+          {/* Google Maps */}
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={fadeInUpVariants}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="mt-8"
+          >
+            <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+              <iframe
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3661.708932856262!2d88.76057427537697!3d23.397944578886716!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39f9c11d05f92d3b%3A0x3e5b5e51f5e5b5e5!2sHaripur%2C%20Rajarampur%2C%20Lalgola%2C%20Murshidabad%2C%20West%20Bengal!5e0!3m2!1sen!2sin!4v1621234567890!5m2!1sen!2sin"
+                width="100%"
+                height="450"
+                style={{ border: 0 }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="SGN Academy Location"
+              />
+            </div>
+          </motion.div>
         </div>
       </div>
 
