@@ -41,7 +41,7 @@ const StaffGallery = () => {
   }
 
   return (
-    <div className="bg-gray-50">
+    <div className="bg-gradient-to-b from-gray-50 to-white">
       {/* Hero Section */}
       <div className="relative bg-gray-900 text-white py-24">
         <div className="absolute inset-0">
@@ -68,7 +68,7 @@ const StaffGallery = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid md:grid-cols-2 gap-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {staff.map((member, index) => (
             <motion.div
               key={member.id}
@@ -76,102 +76,67 @@ const StaffGallery = () => {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
               viewport={{ once: true }}
-              className="bg-white rounded-lg shadow-lg overflow-hidden"
+              className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100"
             >
-              <div className="md:flex">
-                <div className="md:w-1/3">
-                  <div className="h-full">
-                    <img
-                      src={member.photoUrl}
-                      alt={member.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
+              <div className="flex flex-col">
+                <div className="relative pt-[100%] w-full">
+                  <img
+                    src={member.photoUrl}
+                    alt={member.name}
+                    className="absolute inset-0 w-full h-full object-cover rounded-t-xl hover:scale-105 transition-transform duration-300"
+                  />
                 </div>
-                <div className="p-6 md:w-2/3">
-                  <div className="flex items-center justify-between mb-4">
+                <div className="p-6 flex-1">
+                  <div className="flex flex-col items-start gap-2 mb-4">
                     <h3 className="text-xl font-bold text-gray-900">{member.name}</h3>
-                    <span className="px-3 py-1 bg-red-100 text-red-600 rounded-full text-sm">
+                    <span className="px-3 py-1 bg-red-100 text-red-600 rounded-full text-sm font-medium">
                       {member.position}
                     </span>
                   </div>
                   
-                  <div className="space-y-3 mb-4">
-                    <div className="flex items-center text-gray-600">
-                      <BookOpen className="h-5 w-5 text-red-600 mr-2" />
+                  <div className="space-y-3 mb-6">
+                    <div className="flex items-center text-gray-600 hover:text-gray-900 transition-colors">
+                      <BookOpen className="h-5 w-5 text-red-600 mr-3 flex-shrink-0" />
                       <span>{member.qualification}</span>
                     </div>
-                    <div className="flex items-center text-gray-600">
-                      <Award className="h-5 w-5 text-red-600 mr-2" />
+                    <div className="flex items-center text-gray-600 hover:text-gray-900 transition-colors">
+                      <Award className="h-5 w-5 text-red-600 mr-3 flex-shrink-0" />
                       <span>{member.experience} Experience</span>
                     </div>
                   </div>
 
-                  <div className="mb-4">
-                    <h4 className="font-semibold text-gray-900 mb-2">Expertise:</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {member.expertise.map((skill, idx) => (
-                        <span
-                          key={idx}
-                          className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm flex items-center"
-                        >
-                          <Star className="h-4 w-4 text-red-600 mr-1" />
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2 text-sm text-gray-600">
-                    <div className="flex items-center">
-                      <Mail className="h-4 w-4 text-red-600 mr-2" />
-                      <a href={`mailto:${member.email}`} className="hover:text-red-600">
-                        {member.email}
+                  <div className="flex items-center space-x-4 mt-4 pt-4 border-t border-gray-100">
+                    {member.facebook && (
+                      <a
+                        href={member.facebook}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-gray-400 hover:text-blue-600 transition-colors"
+                      >
+                        <Facebook className="h-5 w-5" />
                       </a>
-                    </div>
-                    <div className="flex items-center">
-                      <Phone className="h-4 w-4 text-red-600 mr-2" />
-                      <a href={`tel:${member.phone}`} className="hover:text-red-600">
-                        {member.phone}
+                    )}
+                    {member.twitter && (
+                      <a
+                        href={member.twitter}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-gray-400 hover:text-blue-400 transition-colors"
+                      >
+                        <Twitter className="h-5 w-5" />
                       </a>
-                    </div>
+                    )}
+                    {member.linkedin && (
+                      <a
+                        href={member.linkedin}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-gray-400 hover:text-blue-700 transition-colors"
+                      >
+                        <Linkedin className="h-5 w-5" />
+                      </a>
+                    )}
                   </div>
-
-                  {/* Social Links */}
-                  {member.socialLinks && (
-                    <div className="mt-4 flex space-x-4">
-                      {member.socialLinks.facebook && (
-                        <a
-                          href={member.socialLinks.facebook}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-gray-400 hover:text-blue-600"
-                        >
-                          <Facebook className="h-5 w-5" />
-                        </a>
-                      )}
-                      {member.socialLinks.twitter && (
-                        <a
-                          href={member.socialLinks.twitter}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-gray-400 hover:text-blue-400"
-                        >
-                          <Twitter className="h-5 w-5" />
-                        </a>
-                      )}
-                      {member.socialLinks.linkedin && (
-                        <a
-                          href={member.socialLinks.linkedin}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-gray-400 hover:text-blue-700"
-                        >
-                          <Linkedin className="h-5 w-5" />
-                        </a>
-                      )}
-                    </div>
-                  )}
                 </div>
               </div>
             </motion.div>
