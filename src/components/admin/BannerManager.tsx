@@ -1,116 +1,138 @@
 import React, { useState, useEffect } from 'react';
-import { collection, addDoc, deleteDoc, doc, onSnapshot } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, storage } from '../../lib/firebase';
 import { toast } from 'react-hot-toast';
-import { Trash2, Upload, Image } from 'lucide-react';
+import { Trash2, Upload, Loader2 } from 'lucide-react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../../lib/firebase';
 
+interface Banner {
+  id: string;
+  imageUrl: string;
+  storagePath: string;
+  fileName: string;
+  createdAt: string;
+  userId: string;
+}
+
 const BannerManager = () => {
-  const [banners, setBanners] = useState([]);
+  const [banners, setBanners] = useState<Banner[]>([]);
   const [uploading, setUploading] = useState(false);
   const [user] = useAuthState(auth);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
 
-    try {
-      const unsubscribe = onSnapshot(collection(db, 'banners'), (snapshot) => {
+    const q = query(collection(db, 'banners'), orderBy('createdAt', 'desc'));
+    
+    const unsubscribe = onSnapshot(q, 
+      (snapshot) => {
         const bannerData = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
-        }));
+        })) as Banner[];
         setBanners(bannerData);
-      }, (error) => {
-        console.error('Error fetching banners:', error);
-        setError(error);
+        setError(null);
+      },
+      (err) => {
+        console.error('Error fetching banners:', err);
+        setError('Failed to load banners');
         toast.error('Error loading banners');
-      });
+      }
+    );
 
-      return () => unsubscribe();
-    } catch (error) {
-      console.error('Error setting up banner listener:', error);
-      setError(error);
-      toast.error('Error loading banners');
-    }
+    return () => unsubscribe();
   }, [user]);
 
-  const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (!file || !user) return;
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file');
-      return;
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image size should be less than 5MB');
-      return;
-    }
-
     try {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please upload an image file');
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Image size should be less than 5MB');
+        return;
+      }
+
       setUploading(true);
-      
-      // Create a new image object to check dimensions
-      const img = new Image();
-      const imageUrl = URL.createObjectURL(file);
-      
-      img.onload = async () => {
-        URL.revokeObjectURL(imageUrl);
-        
-        // Check if image dimensions are suitable for banner (16:9 or similar aspect ratio)
-        const aspectRatio = img.width / img.height;
-        if (aspectRatio < 1.3 || aspectRatio > 1.8) {
-          toast.error('Please upload an image with landscape orientation (16:9 recommended)');
-          setUploading(false);
-          return;
-        }
 
-        try {
-          const storageRef = ref(storage, `banners/${Date.now()}_${file.name}`);
-          await uploadBytes(storageRef, file);
-          const downloadUrl = await getDownloadURL(storageRef);
+      // Create a temporary image element to check dimensions
+      const img = document.createElement('img');
+      const imgPromise = new Promise<boolean>((resolve) => {
+        img.onload = () => {
+          const aspectRatio = img.width / img.height;
+          if (aspectRatio < 1.3 || aspectRatio > 1.8) {
+            toast.error('Please upload an image with landscape orientation (16:9 recommended)');
+            resolve(false);
+          } else {
+            resolve(true);
+          }
+          URL.revokeObjectURL(img.src);
+        };
+        img.onerror = () => {
+          toast.error('Error loading image');
+          URL.revokeObjectURL(img.src);
+          resolve(false);
+        };
+      });
 
-          await addDoc(collection(db, 'banners'), {
-            imageUrl: downloadUrl,
-            storagePath: storageRef.fullPath,
-            createdAt: new Date().toISOString(),
-            userId: user.uid,
-            dimensions: {
-              width: img.width,
-              height: img.height,
-              aspectRatio
-            }
-          });
+      // Create temporary URL for validation
+      const tempUrl = URL.createObjectURL(file);
+      img.src = tempUrl;
 
-          toast.success('Banner uploaded successfully');
-        } catch (error) {
-          console.error('Error uploading banner:', error);
-          toast.error('Error uploading banner');
-        }
-      };
-
-      img.onerror = () => {
-        URL.revokeObjectURL(imageUrl);
-        toast.error('Error loading image');
+      const isValidDimensions = await imgPromise;
+      if (!isValidDimensions) {
         setUploading(false);
+        return;
+      }
+
+      // Upload to Firebase Storage
+      const timestamp = Date.now();
+      const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '_').toLowerCase();
+      const storagePath = `banners/${timestamp}_${cleanFileName}`;
+      
+      const storageRef = ref(storage, storagePath);
+      const metadata = {
+        contentType: file.type,
+        customMetadata: {
+          uploadedBy: user.uid,
+          originalName: file.name
+        }
       };
 
-      img.src = imageUrl;
-    } catch (error) {
-      console.error('Error uploading banner:', error);
-      toast.error('Error uploading banner');
+      const uploadResult = await uploadBytes(storageRef, file, metadata);
+      const downloadUrl = await getDownloadURL(uploadResult.ref);
+
+      // Add to Firestore
+      await addDoc(collection(db, 'banners'), {
+        imageUrl: downloadUrl,
+        storagePath: storagePath,
+        createdAt: new Date().toISOString(),
+        userId: user.uid,
+        fileName: cleanFileName
+      });
+
+      toast.success('Banner uploaded successfully');
+      if (e.target) e.target.value = '';
+    } catch (err: any) {
+      console.error('Upload error:', err);
+      setError(err?.message || 'Failed to upload banner');
+      toast.error(err?.message || 'Error uploading banner');
     } finally {
       setUploading(false);
     }
   };
 
-  const handleDelete = async (banner) => {
+  const handleDelete = async (banner: Banner) => {
     if (!user) return;
 
     try {
@@ -120,80 +142,94 @@ const BannerManager = () => {
 
       // Delete from Firestore
       await deleteDoc(doc(db, 'banners', banner.id));
-      
+
       toast.success('Banner deleted successfully');
-    } catch (error) {
-      console.error('Error deleting banner:', error);
-      toast.error('Error deleting banner');
+    } catch (err: any) {
+      console.error('Delete error:', err);
+      toast.error(err?.message || 'Error deleting banner');
     }
   };
 
   if (!user) {
     return (
-      <div className="text-center py-8">
-        Please log in to manage banners.
+      <div className="p-6 text-center">
+        <p className="text-gray-600">Please log in to manage banners.</p>
       </div>
     );
   }
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-6">Manage Banners</h2>
-
-      <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-        <div className="flex items-center justify-center w-full">
-          <label className="w-full flex flex-col items-center px-4 py-6 bg-white rounded-lg shadow-lg tracking-wide uppercase border border-dashed border-gray-300 cursor-pointer hover:bg-gray-50">
-            <Image className="w-8 h-8 text-gray-500" />
-            <span className="mt-2 text-base leading-normal">Select banner image</span>
-            <span className="text-sm text-gray-500 mt-1">(16:9 aspect ratio recommended, max 5MB)</span>
-            <input
-              type="file"
-              className="hidden"
-              accept="image/*"
-              onChange={handleFileUpload}
-              disabled={uploading}
-            />
+    <div className="p-6 bg-white rounded-lg shadow">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Banner Manager</h2>
+          <p className="text-sm text-gray-500 mt-1">Upload and manage website banners</p>
+        </div>
+        
+        <div className="relative">
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleFileUpload}
+            className="hidden"
+            id="banner-upload"
+            disabled={uploading}
+          />
+          <label
+            htmlFor="banner-upload"
+            className={`inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg
+              hover:bg-red-700 transition-colors cursor-pointer disabled:opacity-50
+              disabled:cursor-not-allowed ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            {uploading ? (
+              <>
+                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                Uploading...
+              </>
+            ) : (
+              <>
+                <Upload className="h-5 w-5 mr-2" />
+                Upload Banner
+              </>
+            )}
           </label>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-md">
-        <div className="p-6">
-          <h3 className="text-xl font-bold mb-4">Current Banners</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {banners.map((banner) => (
-              <div
-                key={banner.id}
-                className="relative group aspect-[4/3] rounded-lg overflow-hidden shadow-md"
-              >
-                <img
-                  src={banner.imageUrl}
-                  alt="Banner"
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <button
-                    onClick={() => handleDelete(banner)}
-                    className="p-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors"
-                  >
-                    <Trash2 className="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-          {banners.length === 0 && !error && (
-            <div className="text-center py-8 text-gray-500">
-              No banners uploaded yet.
-            </div>
-          )}
-          {error && (
-            <div className="text-center py-8 text-red-500">
-              Error loading banners. Please try again later.
-            </div>
-          )}
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-lg">
+          {error}
         </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {banners.map((banner) => (
+          <div 
+            key={banner.id}
+            className="group relative aspect-video bg-gray-100 rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
+          >
+            <img
+              src={banner.imageUrl}
+              alt={banner.fileName}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <button
+                onClick={() => handleDelete(banner)}
+                className="p-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors"
+              >
+                <Trash2 className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
+
+      {banners.length === 0 && !error && (
+        <div className="text-center py-12 text-gray-500">
+          No banners uploaded yet.
+        </div>
+      )}
     </div>
   );
 };
