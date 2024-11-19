@@ -228,18 +228,52 @@ const Contact = () => {
       </div>
 
       {/* Map Section */}
-      <div className="relative h-[500px] bg-gray-200">
-        <iframe
-          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d226.90750880116974!2d88.19064181774591!3d24.365190399999998!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39fbcd007a987885%3A0x3b63d6755ebf8f89!2sSGN%20Academy!5e0!3m2!1sen!2sbd!4v1700378860799!5m2!1sen!2sbd"
-          width="100%"
-          height="100%"
-          style={{ border: 0 }}
-          allowFullScreen
-          loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
-          title="SGN Academy Location"
-          className="absolute inset-0"
-        />
+      <div className="relative">
+        <div className="h-[500px] bg-gray-200">
+          <iframe
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d226.90750880116974!2d88.19064181774591!3d24.365190399999998!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39fbcd007a987885%3A0x3b63d6755ebf8f89!2sSGN%20Academy!5e0!3m2!1sen!2sbd!4v1700378860799!5m2!1sen!2sbd&map_action=pano"
+            width="100%"
+            height="100%"
+            style={{ border: 0 }}
+            allowFullScreen
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            title="SGN Academy Location"
+            className="absolute inset-0"
+          />
+        </div>
+        <div className="absolute bottom-4 right-4 flex gap-2">
+          <a
+            href="https://www.google.com/maps/@24.3651904,88.1906418,3a,75y,90t/data=!3m6!1e1!3m4!1s0x39fbcd007a987885:0x3b63d6755ebf8f89!2e0!7i13312!8i6656?entry=ttu"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            Open Street View
+          </a>
+          <button
+            onClick={() => {
+              const mapUrl = 'https://www.google.com/maps/embed?pb=!4v1700378860799!6m8!1m7!1sCAoSLEFGMVFpcE1GWkNNNVZhRXVlRDlQYmFKVWtfcEFLYjZELXFYSHZKNkxjNnJn!2m2!1d24.3651904!2d88.1906418!3f0!4f0!5f0.7820865974627469';
+              const iframe = document.querySelector('iframe');
+              if (iframe) {
+                iframe.src = iframe.src.includes('&map_action=pano') 
+                  ? iframe.src.replace('&map_action=pano', '')
+                  : iframe.src + '&map_action=pano';
+              }
+            }}
+            className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            Toggle View
+          </button>
+        </div>
       </div>
     </div>
   );
