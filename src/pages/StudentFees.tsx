@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Search, AlertCircle } from 'lucide-react';
 import PaymentModal from '../components/admin/PaymentModal';
 import FeeReceiptModal from '../components/admin/FeeReceiptModal';
+import { initializeRazorpay, openRazorpayCheckout, RazorpayOptions } from '../utils/razorpay';
 
 interface Fee {
   id: string;
@@ -33,6 +34,8 @@ const StudentFees = () => {
   const [selectedFee, setSelectedFee] = useState<any>(null);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
+  const [advanceAmount, setAdvanceAmount] = useState('');
+  const [showAdvanceModal, setShowAdvanceModal] = useState(false);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,6 +122,95 @@ const StudentFees = () => {
     }
   };
 
+  const handleAdvancePayment = async () => {
+    try {
+      const amount = parseInt(advanceAmount);
+      if (isNaN(amount) || amount <= 0) {
+        toast.error('Please enter a valid amount');
+        return;
+      }
+
+      await initializeRazorpay();
+
+      // Create a new order in Firebase
+      const ordersRef = collection(db, 'orders');
+      const orderDoc = await addDoc(ordersRef, {
+        studentId: studentData.id,
+        amount: amount * 100, // Razorpay expects amount in paise
+        status: 'pending',
+        type: 'advance',
+        createdAt: new Date().toISOString(),
+      });
+
+      // Test mode configuration
+      const options: RazorpayOptions = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID, // Using test key from environment variables
+        amount: amount * 100,
+        currency: 'INR',
+        name: 'SGN School',
+        description: 'Advance Fee Payment',
+        handler: async (response: any) => {
+          // Update order status and create payment record
+          await updateDoc(doc(db, 'orders', orderDoc.id), {
+            status: 'completed',
+            paymentId: response.razorpay_payment_id,
+            signature: response.razorpay_signature,
+          });
+
+          // Create payment record
+          await addDoc(collection(db, 'feePayments'), {
+            studentId: studentData.id,
+            amount: amount,
+            type: 'advance',
+            paymentMethod: 'online',
+            paymentId: response.razorpay_payment_id,
+            orderId: orderDoc.id,
+            createdAt: new Date().toISOString(),
+          });
+
+          toast.success('Advance payment successful!');
+          setShowAdvanceModal(false);
+          setAdvanceAmount('');
+        },
+        prefill: {
+          name: studentData.name || 'Test User',
+          email: studentData.email || 'test@example.com',
+          contact: studentData.phone || '9999999999',
+        },
+        theme: {
+          color: '#3B82F6',
+        },
+        notes: {
+          address: 'Test Mode Payment'
+        },
+        config: {
+          display: {
+            blocks: {
+              utib: {
+                name: 'Pay using test card',
+                instruments: [
+                  {
+                    method: 'card',
+                    card: {
+                      number: '4111111111111111',
+                      expiry: '12/25',
+                      cvv: '123'
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      };
+
+      openRazorpayCheckout(options);
+    } catch (error) {
+      console.error('Error processing advance payment:', error);
+      toast.error('Failed to process payment');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4">
@@ -181,7 +273,15 @@ const StudentFees = () => {
 
             {/* Fee Details */}
             <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold mb-4">Fee Details</h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">Fee Details</h2>
+                <button
+                  onClick={() => setShowAdvanceModal(true)}
+                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  Pay Advance
+                </button>
+              </div>
               {studentData.fees && studentData.fees.length > 0 ? (
                 <div className="space-y-4">
                   {studentData.fees.map((fee: any) => (
@@ -261,6 +361,41 @@ const StudentFees = () => {
             setSelectedPayment(null);
           }}
         />
+      )}
+
+      {/* Advance Payment Modal */}
+      {showAdvanceModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-semibold mb-4">Pay Advance Fee</h2>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Amount (₹)
+              </label>
+              <input
+                type="number"
+                value={advanceAmount}
+                onChange={(e) => setAdvanceAmount(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter amount"
+              />
+            </div>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => setShowAdvanceModal(false)}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAdvancePayment}
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Pay Now
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
