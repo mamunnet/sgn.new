@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import type { Fee, FeePayment, Student, AdditionalFee } from '../../types/index';
 import FeeReceiptModal from './FeeReceiptModal';
+import PaymentModal from './PaymentModal';
 
 const FeesManager = () => {
   const [students, setStudents] = useState<Student[]>([]);
@@ -29,6 +30,14 @@ const FeesManager = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [showStudentFeeSettingsModal, setShowStudentFeeSettingsModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedPaymentDetails, setSelectedPaymentDetails] = useState<{
+    student: Student;
+    amount: number;
+    feeType: string;
+    academicYear: string;
+    month?: string;
+  } | null>(null);
 
   // Fee structure constants
   const DEFAULT_CLASS_FEES = {
@@ -590,6 +599,23 @@ const FeesManager = () => {
     );
   };
 
+  const handlePaymentClick = (student: Student, amount: number, feeType: string, month?: string) => {
+    setSelectedPaymentDetails({
+      student,
+      amount,
+      feeType,
+      academicYear: selectedYear.toString(),
+      month,
+    });
+    setShowPaymentModal(true);
+  };
+
+  const handlePaymentSuccess = async () => {
+    // Refresh the payments list
+    await loadPayments();
+    toast.success('Payment recorded successfully');
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -830,11 +856,11 @@ const FeesManager = () => {
                     <div className="flex space-x-3">
                       {fee.status !== 'paid' && (
                         <button
-                          onClick={() => recordPayment(fee)}
+                          onClick={() => handlePaymentClick(fee.studentName, fee.amount, 'Monthly Fee', getMonthName(selectedMonth))}
                           className="text-emerald-600 hover:text-emerald-900"
-                          title="Record Payment"
+                          title="Process Payment"
                         >
-                          <DollarSign className="h-5 w-5" />
+                          <CreditCard className="h-5 w-5" />
                         </button>
                       )}
                       {fee.status === 'paid' && (
@@ -938,6 +964,20 @@ const FeesManager = () => {
             setShowStudentFeeSettingsModal(false);
             setSelectedStudent(null);
           }}
+        />
+      )}
+
+      {/* Payment Modal */}
+      {showPaymentModal && selectedPaymentDetails && (
+        <PaymentModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          student={selectedPaymentDetails.student}
+          feeAmount={selectedPaymentDetails.amount}
+          feeType={selectedPaymentDetails.feeType}
+          academicYear={selectedPaymentDetails.academicYear}
+          month={selectedPaymentDetails.month}
+          onPaymentSuccess={handlePaymentSuccess}
         />
       )}
     </div>

@@ -62,9 +62,9 @@ const AdminDashboard = () => {
 
         <nav className="mt-8">
           <Link
-            to=""
+            to="dashboard"
             className={`flex items-center px-6 py-3 text-white/90 hover:bg-white/10 transition-colors ${
-              isActive('') ? 'bg-white/20' : ''
+              isActive('dashboard') ? 'bg-white/20' : ''
             }`}
           >
             <LayoutDashboard className="h-5 w-5 mr-3" />
@@ -76,7 +76,7 @@ const AdminDashboard = () => {
             <button
               onClick={() => setIsStudentMenuOpen(!isStudentMenuOpen)}
               className={`w-full flex items-center px-6 py-3 text-white/90 hover:bg-white/10 transition-colors ${
-                location.pathname.includes('students') ? 'bg-white/20' : ''
+                location.pathname.includes('student-') ? 'bg-white/20' : ''
               }`}
             >
               <GraduationCap className="h-5 w-5 mr-3" />
@@ -87,18 +87,18 @@ const AdminDashboard = () => {
             {isStudentMenuOpen && (
               <div className="bg-black/10">
                 <Link
-                  to="students/admission"
+                  to="student-admission"
                   className={`flex items-center px-6 py-3 text-white/90 hover:bg-white/10 pl-14 ${
-                    isActive('students/admission') ? 'bg-white/20' : ''
+                    isActive('student-admission') ? 'bg-white/20' : ''
                   }`}
                 >
                   <UserPlus className="h-4 w-4 mr-2" />
                   New Admission
                 </Link>
                 <Link
-                  to="students/list"
+                  to="student-list"
                   className={`flex items-center px-6 py-3 text-white/90 hover:bg-white/10 pl-14 ${
-                    isActive('students/list') ? 'bg-white/20' : ''
+                    isActive('student-list') ? 'bg-white/20' : ''
                   }`}
                 >
                   <ClipboardList className="h-4 w-4 mr-2" />
@@ -109,9 +109,9 @@ const AdminDashboard = () => {
           </div>
 
           <Link
-            to="staff"
+            to="staff-manager"
             className={`flex items-center px-6 py-3 text-white/90 hover:bg-white/10 transition-colors ${
-              isActive('staff') ? 'bg-white/20' : ''
+              isActive('staff-manager') ? 'bg-white/20' : ''
             }`}
           >
             <UserCog className="h-5 w-5 mr-3" />
@@ -119,9 +119,9 @@ const AdminDashboard = () => {
           </Link>
 
           <Link
-            to="fees"
+            to="fees-manager"
             className={`flex items-center px-6 py-3 text-white/90 hover:bg-white/10 transition-colors ${
-              isActive('fees') ? 'bg-white/20' : ''
+              isActive('fees-manager') ? 'bg-white/20' : ''
             }`}
           >
             <DollarSign className="h-5 w-5 mr-3" />
@@ -129,9 +129,9 @@ const AdminDashboard = () => {
           </Link>
 
           <Link
-            to="banners"
+            to="banner"
             className={`flex items-center px-6 py-3 text-white/90 hover:bg-white/10 transition-colors ${
-              isActive('banners') ? 'bg-white/20' : ''
+              isActive('banner') ? 'bg-white/20' : ''
             }`}
           >
             <Image className="h-5 w-5 mr-3" />
@@ -139,9 +139,9 @@ const AdminDashboard = () => {
           </Link>
           
           <Link
-            to="notices"
+            to="notice"
             className={`flex items-center px-6 py-3 text-white/90 hover:bg-white/10 transition-colors ${
-              isActive('notices') ? 'bg-white/20' : ''
+              isActive('notice') ? 'bg-white/20' : ''
             }`}
           >
             <Bell className="h-5 w-5 mr-3" />
@@ -169,9 +169,9 @@ const AdminDashboard = () => {
           </Link>
           
           <Link
-            to="gallery"
+            to="gallery-manager"
             className={`flex items-center px-6 py-3 text-white/90 hover:bg-white/10 transition-colors ${
-              isActive('gallery') ? 'bg-white/20' : ''
+              isActive('gallery-manager') ? 'bg-white/20' : ''
             }`}
           >
             <ImageIcon className="h-5 w-5 mr-3" />
@@ -189,9 +189,9 @@ const AdminDashboard = () => {
           </Link>
 
           <Link
-            to="profile"
+            to="admin-profile"
             className={`flex items-center px-6 py-3 text-white/90 hover:bg-white/10 transition-colors ${
-              isActive('profile') ? 'bg-white/20' : ''
+              isActive('admin-profile') ? 'bg-white/20' : ''
             }`}
           >
             <Settings className="h-5 w-5 mr-3" />
@@ -200,7 +200,7 @@ const AdminDashboard = () => {
           
           <button
             onClick={handleLogout}
-            className="flex items-center px-6 py-3 text-white/90 hover:bg-white/10 transition-colors w-full"
+            className="w-full flex items-center px-6 py-3 text-white/90 hover:bg-white/10 transition-colors mt-4"
           >
             <LogOut className="h-5 w-5 mr-3" />
             Logout

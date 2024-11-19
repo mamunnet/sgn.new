@@ -10,6 +10,7 @@ const Navbar = () => {
     { title: 'HOME', path: '/' },
     { title: 'ABOUT US', path: '/about' },
     { title: 'ADMISSION', path: '/admission' },
+    { title: 'PAY FEES', path: '/student-fees' },
     { title: 'STAFF', path: '/staff-gallery' },
     { title: 'GALLERY', path: '/gallery' },
     { title: 'CONTACT', path: '/contact' },

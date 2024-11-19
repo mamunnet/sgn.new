@@ -51,6 +51,52 @@ const FeeReceiptModal: React.FC<FeeReceiptModalProps> = ({
     }
   };
 
+  const getMonthYear = () => {
+    if (!fee?.month) return 'N/A';
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    return `${monthNames[fee.month - 1]} ${fee.year || 'N/A'}`;
+  };
+
+  const numberToWords = (num: number): string => {
+    const units = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+    const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+    
+    const convertLessThanOneThousand = (n: number): string => {
+      if (n === 0) return '';
+      
+      if (n < 20) return units[n];
+      
+      if (n < 100) {
+        return tens[Math.floor(n / 10)] + (n % 10 ? ' ' + units[n % 10] : '');
+      }
+      
+      return units[Math.floor(n / 100)] + ' Hundred' + (n % 100 ? ' ' + convertLessThanOneThousand(n % 100) : '');
+    };
+    
+    if (num === 0) return 'Zero';
+    
+    let result = '';
+    
+    if (num >= 100000) {
+      result += convertLessThanOneThousand(Math.floor(num / 100000)) + ' Lakh ';
+      num %= 100000;
+    }
+    
+    if (num >= 1000) {
+      result += convertLessThanOneThousand(Math.floor(num / 1000)) + ' Thousand ';
+      num %= 1000;
+    }
+    
+    if (num > 0) {
+      result += convertLessThanOneThousand(num);
+    }
+    
+    return result.trim();
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -112,38 +158,20 @@ const FeeReceiptModal: React.FC<FeeReceiptModalProps> = ({
               </div>
               <div>
                 <p className="text-gray-600">Month/Year:</p>
-                <p className="font-semibold">
-                  {fee?.month ? new Date(0, fee.month - 1).toLocaleString('default', { month: 'long' }) : 'N/A'} {fee?.year || new Date().getFullYear()}
-                </p>
+                <p className="font-semibold">{getMonthYear()}</p>
               </div>
             </div>
 
             {/* Payment Details */}
             <div className="border-t border-gray-200 pt-6 mb-6">
               <div className="flex justify-between items-center mb-4">
-                <span className="text-gray-600">Tuition Fee</span>
+                <span className="text-gray-600">Fee Amount</span>
                 <span className="font-semibold">₹{(fee?.amount || 0).toLocaleString()}</span>
               </div>
 
-              {/* Additional Fees */}
-              {payment?.additionalFees?.map((additionalFee, index) => (
-                <div key={index} className="flex justify-between items-center mb-4">
-                  <span className="text-gray-600">{additionalFee.type} Fee ({additionalFee.feeType})</span>
-                  <span className="font-semibold">₹{additionalFee.amount.toLocaleString()}</span>
-                </div>
-              ))}
-
-              {/* Discount if applied */}
-              {payment?.discountApplied && payment.discountApplied > 0 && (
-                <div className="flex justify-between items-center mb-4 text-red-600">
-                  <span>{payment.discountType || 'Discount'}</span>
-                  <span>-₹{payment.discountApplied.toLocaleString()}</span>
-                </div>
-              )}
-
               <div className="flex justify-between items-center font-bold text-lg border-t border-gray-200 pt-4">
-                <span>Total Amount</span>
-                <span>₹{(payment?.totalAmount || 0).toLocaleString()}</span>
+                <span>Total Amount Paid</span>
+                <span>₹{(payment?.amount || 0).toLocaleString()}</span>
               </div>
             </div>
 
@@ -151,23 +179,29 @@ const FeeReceiptModal: React.FC<FeeReceiptModalProps> = ({
             <div className="mb-6">
               <p className="text-gray-600">Payment Method:</p>
               <p className="font-semibold capitalize">{payment?.paymentMethod || 'N/A'}</p>
+              {payment?.remarks && (
+                <p className="text-gray-600 mt-1">Remarks: {payment.remarks}</p>
+              )}
             </div>
 
             {/* Amount in Words */}
             <div className="mb-6">
               <p className="text-gray-600">Amount in Words:</p>
               <p className="font-semibold">
-                {new Intl.NumberFormat('en-IN', {
-                  style: 'currency',
-                  currency: 'INR',
-                  maximumFractionDigits: 0,
-                }).format(payment?.totalAmount || 0).replace(/^.*?\s/, '')} Only
+                {numberToWords(payment?.amount || 0)} Rupees Only
               </p>
             </div>
 
-            {/* Signature */}
-            <div className="flex justify-end mt-12">
+            {/* Signature and Seal */}
+            <div className="flex justify-end mt-12 relative">
               <div className="text-center">
+                <div className="absolute bottom-0 right-20 w-24 h-24 border-2 border-blue-600 rounded-full opacity-30 rotate-[-20deg] flex items-center justify-center">
+                  <div className="text-blue-600 text-xs font-bold text-center">
+                    <div>{SCHOOL_INFO.name}</div>
+                    <div>AUTHORIZED</div>
+                    <div>SIGNATURE</div>
+                  </div>
+                </div>
                 <div className="w-40 border-b border-gray-400"></div>
                 <p className="mt-2">Authorized Signature</p>
               </div>

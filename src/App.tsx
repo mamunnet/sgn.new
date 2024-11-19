@@ -20,6 +20,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import Admission from './pages/Admission';
 import StaffGallery from './pages/StaffGallery';
+import StudentFees from './pages/StudentFees';
 
 // Admin Components
 import DashboardHome from './components/admin/DashboardHome';
@@ -75,6 +76,7 @@ const App: React.FC = () => {
                   <Route path="/gallery" element={<Gallery />} />
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/feedback" element={<Feedback />} />
+                  <Route path="/student-fees" element={<StudentFees />} />
 
                   {/* Admin Routes */}
                   <Route path="/sgnadminpanel" element={<AdminLogin />} />
@@ -85,28 +87,24 @@ const App: React.FC = () => {
                         <Routes>
                           <Route element={<AdminDashboard />}>
                             <Route path="dashboard" element={<DashboardHome />} />
-                            <Route path="banners" element={<BannerManager />} />
-                            <Route path="notices" element={<NoticeManager />} />
+                            <Route path="notice" element={<NoticeManager />} />
                             <Route path="events" element={<EventManager />} />
                             <Route path="alumni" element={<AlumniManager />} />
+                            <Route path="banner" element={<BannerManager />} />
                             <Route path="tc-generator" element={<TCGenerator />} />
-                            <Route path="tc-preview" element={<TCPreview />} />
-                            <Route path="gallery" element={<GalleryManager />} />
-                            <Route path="students">
-                              <Route path="admission" element={<StudentAdmission />} />
-                              <Route path="list" element={<StudentList />} />
-                              <Route path="view" element={<StudentView />} />
-                            </Route>
-                            <Route path="staff" element={<StaffManager />} />
-                            <Route path="fees" element={<FeesManager />} />
-                            <Route path="profile" element={<AdminProfile />} />
+                            <Route path="student-admission" element={<StudentAdmission />} />
+                            <Route path="student-list" element={<StudentList />} />
+                            <Route path="admin-profile" element={<AdminProfile />} />
+                            <Route path="staff-manager" element={<StaffManager />} />
+                            <Route path="fees-manager" element={<FeesManager />} />
+                            <Route path="student-view/:id" element={<StudentView />} />
+                            <Route path="tc-preview/:id" element={<TCPreview />} />
+                            <Route path="gallery-manager" element={<GalleryManager />} />
                           </Route>
                         </Routes>
                       </ProtectedRoute>
                     }
                   />
-
-                  {/* 404 Route */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </div>
