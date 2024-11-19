@@ -8,6 +8,11 @@ export interface Student {
   rollNo?: string;
   createdAt: string;
   updatedAt: string;
+  feeSettings?: {
+    startDate: string;
+    dueDateDay: number; // Day of month for fee due date
+    customFeeStructure?: boolean;
+  };
 }
 
 // Fee type

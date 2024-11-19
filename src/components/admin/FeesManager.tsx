@@ -27,22 +27,24 @@ const FeesManager = () => {
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<FeePayment | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showStudentFeeSettingsModal, setShowStudentFeeSettingsModal] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
 
   // Fee structure constants
-  const CLASS_FEES = {
-    'PLAYGROUP': 250,
-    'NURSERY': 250,
-    'KG': 250,
-    'I': 350,
-    'II': 350,
-    'III': 350,
-    'IV': 350,
-    'V': 350,
-    'VI': 450,
-    'VII': 450,
-    'VIII': 450,
-    'IX': 450,
-    'X': 450,
+  const DEFAULT_CLASS_FEES = {
+    'PLAYGROUP': { tuitionFee: 250, examFee: 100, sportsFee: 50 },
+    'NURSERY': { tuitionFee: 250, examFee: 100, sportsFee: 50 },
+    'KG': { tuitionFee: 250, examFee: 100, sportsFee: 50 },
+    'I': { tuitionFee: 350, examFee: 150, sportsFee: 75 },
+    'II': { tuitionFee: 350, examFee: 150, sportsFee: 75 },
+    'III': { tuitionFee: 350, examFee: 150, sportsFee: 75 },
+    'IV': { tuitionFee: 350, examFee: 150, sportsFee: 75 },
+    'V': { tuitionFee: 350, examFee: 150, sportsFee: 75 },
+    'VI': { tuitionFee: 450, examFee: 200, sportsFee: 100 },
+    'VII': { tuitionFee: 450, examFee: 200, sportsFee: 100 },
+    'VIII': { tuitionFee: 450, examFee: 200, sportsFee: 100 },
+    'IX': { tuitionFee: 450, examFee: 200, sportsFee: 100 },
+    'X': { tuitionFee: 450, examFee: 200, sportsFee: 100 },
   } as const;
 
   // Additional fees structure
@@ -60,9 +62,44 @@ const FeesManager = () => {
     'STAFF_WARD': 20
   } as const;
 
+  const [classFees, setClassFees] = useState(DEFAULT_CLASS_FEES);
+  const [showFeeSettingsModal, setShowFeeSettingsModal] = useState(false);
+  const [loadingFeeStructure, setLoadingFeeStructure] = useState(true);
+
+  // Load fee structure from Firebase
+  useEffect(() => {
+    const loadFeeStructure = async () => {
+      try {
+        const feeStructureDoc = await getDocs(collection(db, 'feeStructure'));
+        if (!feeStructureDoc.empty) {
+          const data = feeStructureDoc.docs[0].data();
+          setClassFees(data.classFees || DEFAULT_CLASS_FEES);
+        } else {
+          // If no fee structure exists, create one with default values
+          await addDoc(collection(db, 'feeStructure'), {
+            classFees: DEFAULT_CLASS_FEES,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          });
+        }
+      } catch (error) {
+        console.error('Error loading fee structure:', error);
+        toast.error('Error loading fee structure');
+      } finally {
+        setLoadingFeeStructure(false);
+      }
+    };
+
+    loadFeeStructure();
+  }, []);
+
   const calculateBaseFee = (studentClass: string): number => {
     const normalizedClass = studentClass.toUpperCase();
-    return CLASS_FEES[normalizedClass as keyof typeof CLASS_FEES] || 350; // Default to 350 if class not found
+    const classFeeStructure = classFees[normalizedClass as keyof typeof classFees];
+    if (!classFeeStructure) return 350; // Default fee if class not found
+  
+    // Sum up all fees for the class
+    return Object.values(classFeeStructure).reduce((sum, fee) => sum + fee, 0);
   };
 
   const generateFee = async (student: Student) => {
@@ -87,7 +124,19 @@ const FeesManager = () => {
       }
 
       const baseFee = calculateBaseFee(student.class);
-      const dueDate = new Date(year, month - 1, 10); // Due date is 10th of each month
+      
+      // Calculate due date based on student's settings or default to 10th
+      const dueDateDay = student.feeSettings?.dueDateDay || 10;
+      const dueDate = new Date(year, month - 1, dueDateDay);
+
+      // Check if the start date has been reached
+      if (student.feeSettings?.startDate) {
+        const startDate = new Date(student.feeSettings.startDate);
+        if (currentDate < startDate) {
+          toast.error('Fee generation date is before student\'s start date');
+          return;
+        }
+      }
 
       const feeData: Omit<Fee, 'id'> = {
         studentId: student.id,
@@ -301,29 +350,290 @@ const FeesManager = () => {
     return matchesSearch && matchesFilter;
   });
 
+  const FeeSettingsModal = ({ onClose }: { onClose: () => void }) => {
+    const [tempClassFees, setTempClassFees] = useState(classFees);
+    const [saving, setSaving] = useState(false);
+
+    const handleFeeChange = (
+      className: keyof typeof DEFAULT_CLASS_FEES,
+      feeType: keyof typeof DEFAULT_CLASS_FEES[keyof typeof DEFAULT_CLASS_FEES],
+      value: string
+    ) => {
+      const numValue = parseInt(value) || 0;
+      setTempClassFees(prev => ({
+        ...prev,
+        [className]: {
+          ...prev[className],
+          [feeType]: numValue
+        }
+      }));
+    };
+
+    const handleSave = async () => {
+      try {
+        setSaving(true);
+        
+        // Get the current fee structure document
+        const feeStructureQuery = await getDocs(collection(db, 'feeStructure'));
+        
+        if (!feeStructureQuery.empty) {
+          // Update existing fee structure
+          const docRef = doc(db, 'feeStructure', feeStructureQuery.docs[0].id);
+          await updateDoc(docRef, {
+            classFees: tempClassFees,
+            updatedAt: new Date().toISOString()
+          });
+        } else {
+          // Create new fee structure if none exists
+          await addDoc(collection(db, 'feeStructure'), {
+            classFees: tempClassFees,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          });
+        }
+
+        setClassFees(tempClassFees);
+        toast.success('Fee structure updated successfully');
+        onClose();
+      } catch (error) {
+        console.error('Error saving fee structure:', error);
+        toast.error('Error saving fee structure');
+      } finally {
+        setSaving(false);
+      }
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg p-6 max-w-4xl w-full max-h-[80vh] overflow-y-auto">
+          <h2 className="text-2xl font-bold mb-4">Fee Structure Settings</h2>
+          
+          <div className="space-y-6">
+            {Object.entries(tempClassFees).map(([className, fees]) => (
+              <div key={className} className="border-b pb-4">
+                <h3 className="font-semibold mb-2">Class {className}</h3>
+                <div className="grid grid-cols-3 gap-4">
+                  {Object.entries(fees).map(([feeType, amount]) => (
+                    <div key={feeType} className="flex flex-col">
+                      <label className="text-sm text-gray-600 mb-1">
+                        {feeType.replace(/([A-Z])/g, ' $1').trim()}
+                      </label>
+                      <input
+                        type="number"
+                        value={amount}
+                        onChange={(e) => handleFeeChange(
+                          className as keyof typeof DEFAULT_CLASS_FEES,
+                          feeType as keyof typeof DEFAULT_CLASS_FEES[keyof typeof DEFAULT_CLASS_FEES],
+                          e.target.value
+                        )}
+                        className="border rounded px-3 py-2"
+                        disabled={saving}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6 flex justify-end space-x-4">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+              disabled={saving}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center"
+            >
+              {saving ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                  Saving...
+                </>
+              ) : (
+                'Save Changes'
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const StudentFeeSettingsModal = ({ student, onClose }: { student: Student; onClose: () => void }) => {
+    const [saving, setSaving] = useState(false);
+    const [settings, setSettings] = useState({
+      startDate: student.feeSettings?.startDate || new Date().toISOString().split('T')[0],
+      dueDateDay: student.feeSettings?.dueDateDay || 10,
+      customFeeStructure: student.feeSettings?.customFeeStructure || false
+    });
+
+    const handleSave = async () => {
+      try {
+        setSaving(true);
+        
+        // Update student document with fee settings
+        await updateDoc(doc(db, 'students', student.id), {
+          feeSettings: settings,
+          updatedAt: new Date().toISOString()
+        });
+
+        // Update local state
+        setStudents(prevStudents =>
+          prevStudents.map(s =>
+            s.id === student.id
+              ? { ...s, feeSettings: settings }
+              : s
+          )
+        );
+
+        toast.success('Fee settings updated successfully');
+        onClose();
+      } catch (error) {
+        console.error('Error saving fee settings:', error);
+        toast.error('Error saving fee settings');
+      } finally {
+        setSaving(false);
+      }
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg p-6 max-w-md w-full">
+          <h2 className="text-2xl font-bold mb-4">Fee Settings for {student.name}</h2>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Fee Start Date
+              </label>
+              <input
+                type="date"
+                value={settings.startDate}
+                onChange={(e) => setSettings(prev => ({
+                  ...prev,
+                  startDate: e.target.value
+                }))}
+                className="w-full border rounded-md px-3 py-2"
+                disabled={saving}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Monthly Due Date (Day of Month)
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="28"
+                value={settings.dueDateDay}
+                onChange={(e) => setSettings(prev => ({
+                  ...prev,
+                  dueDateDay: parseInt(e.target.value) || 1
+                }))}
+                className="w-full border rounded-md px-3 py-2"
+                disabled={saving}
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                Choose a day between 1-28 when monthly fees will be due
+              </p>
+            </div>
+
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="customFeeStructure"
+                checked={settings.customFeeStructure}
+                onChange={(e) => setSettings(prev => ({
+                  ...prev,
+                  customFeeStructure: e.target.checked
+                }))}
+                className="h-4 w-4 text-blue-600 rounded border-gray-300"
+                disabled={saving}
+              />
+              <label htmlFor="customFeeStructure" className="ml-2 block text-sm text-gray-900">
+                Enable custom fee structure for this student
+              </label>
+            </div>
+          </div>
+
+          <div className="mt-6 flex justify-end space-x-4">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+              disabled={saving}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center"
+            >
+              {saving ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                  Saving...
+                </>
+              ) : (
+                'Save Changes'
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Fees Management</h2>
-        <button
-          onClick={() => generateFee(students[0])}
-          disabled={loading || isGenerating}
-          className={`flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors ${
-            loading || isGenerating ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
-        >
-          {loading || isGenerating ? (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
-              Generating...
-            </>
-          ) : (
-            <>
-              <Calendar className="h-5 w-5 mr-2" />
-              Generate Fee
-            </>
-          )}
-        </button>
+        <div className="flex space-x-4">
+          <button
+            onClick={() => setShowFeeSettingsModal(true)}
+            disabled={loadingFeeStructure}
+            className={`flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors ${
+              loadingFeeStructure ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+          >
+            {loadingFeeStructure ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                Loading...
+              </>
+            ) : (
+              <>
+                <Filter className="h-5 w-5 mr-2" />
+                Fee Settings
+              </>
+            )}
+          </button>
+          <button
+            onClick={() => generateFee(students[0])}
+            disabled={loading || isGenerating || loadingFeeStructure}
+            className={`flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors ${
+              loading || isGenerating || loadingFeeStructure ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+          >
+            {loading || isGenerating ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Calendar className="h-5 w-5 mr-2" />
+                Generate Fee
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -560,6 +870,16 @@ const FeesManager = () => {
                           <Calendar className="h-5 w-5" />
                         </button>
                       )}
+                      <button
+                        onClick={() => {
+                          setSelectedStudent(students.find(s => s.id === fee.studentId) || null);
+                          setShowStudentFeeSettingsModal(true);
+                        }}
+                        className="text-gray-600 hover:text-gray-900"
+                        title="Fee Settings"
+                      >
+                        <Filter className="h-5 w-5" />
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -605,6 +925,20 @@ const FeesManager = () => {
             onClose={() => setShowReceiptModal(false)}
           />
         </div>
+      )}
+
+      {showFeeSettingsModal && (
+        <FeeSettingsModal onClose={() => setShowFeeSettingsModal(false)} />
+      )}
+
+      {showStudentFeeSettingsModal && selectedStudent && (
+        <StudentFeeSettingsModal
+          student={selectedStudent}
+          onClose={() => {
+            setShowStudentFeeSettingsModal(false);
+            setSelectedStudent(null);
+          }}
+        />
       )}
     </div>
   );
