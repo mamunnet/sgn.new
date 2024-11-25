@@ -20,6 +20,8 @@ const TCGenerator = () => {
   const [loading, setLoading] = useState(true);
   const [students, setStudents] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [selectedClass, setSelectedClass] = useState('');
+  const [classes, setClasses] = useState([]);
 
   // Generate serial number
   const generateSerialNo = () => {
@@ -68,9 +70,22 @@ const TCGenerator = () => {
       setLoading(false);
     });
 
+    // Fetch classes
+    const classesUnsubscribe = onSnapshot(collection(db, 'classes'), (snapshot) => {
+      const classData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setClasses(classData);
+    });
+
     // Fetch students
     const fetchStudents = async () => {
-      const studentsSnapshot = await getDocs(collection(db, 'students'));
+      let studentsQuery = collection(db, 'students');
+      if (selectedClass) {
+        studentsQuery = query(studentsQuery, where('class', '==', selectedClass));
+      }
+      const studentsSnapshot = await getDocs(studentsQuery);
       const studentsList = studentsSnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
@@ -80,8 +95,11 @@ const TCGenerator = () => {
 
     fetchStudents();
 
-    return () => unsubscribe();
-  }, [user]);
+    return () => {
+      unsubscribe();
+      classesUnsubscribe();
+    };
+  }, [user, selectedClass]);
 
   const handleStudentSelect = (e) => {
     const student = students.find(s => s.id === e.target.value);
@@ -219,10 +237,10 @@ const TCGenerator = () => {
 
   const filteredCertificates = certificates.filter(cert => {
     const searchStr = searchTerm.toLowerCase();
-    return (
-      cert.studentName.toLowerCase().includes(searchStr) ||
-      cert.serialNo.toLowerCase().includes(searchStr)
-    );
+    const matchesSearch = cert.studentName.toLowerCase().includes(searchStr) ||
+                         cert.serialNo.toLowerCase().includes(searchStr);
+    const matchesClass = !selectedClass || cert.currentClass === selectedClass;
+    return matchesSearch && matchesClass;
   });
 
   return (
@@ -231,6 +249,23 @@ const TCGenerator = () => {
 
       <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md mb-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Class Filter */}
+          <div className="col-span-full">
+            <label className="block text-gray-700 text-sm font-bold mb-2">
+              Filter by Class
+            </label>
+            <select
+              value={selectedClass}
+              onChange={(e) => setSelectedClass(e.target.value)}
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            >
+              <option value="">All Classes</option>
+              {classes.map(cls => (
+                <option key={cls.id} value={cls.name}>{cls.name}</option>
+              ))}
+            </select>
+          </div>
+
           {/* Student Selection */}
           <div className="col-span-full">
             <label className="block text-gray-700 text-sm font-bold mb-2">
@@ -337,15 +372,27 @@ const TCGenerator = () => {
       <div className="bg-white rounded-lg shadow-md p-6">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-xl font-bold">View Records</h3>
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search by name or serial number..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 w-64"
-            />
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+          <div className="flex items-center space-x-4">
+            <select
+              value={selectedClass}
+              onChange={(e) => setSelectedClass(e.target.value)}
+              className="shadow appearance-none border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            >
+              <option value="">All Classes</option>
+              {classes.map(cls => (
+                <option key={cls.id} value={cls.name}>{cls.name}</option>
+              ))}
+            </select>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search by name or serial number..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 w-64"
+              />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+            </div>
           </div>
         </div>
 

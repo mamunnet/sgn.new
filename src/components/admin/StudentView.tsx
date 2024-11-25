@@ -1,11 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { X, Edit, Save, Calendar, User, Phone, Mail, MapPin, GraduationCap, Heart, Users, Flag } from 'lucide-react';
-import { doc, updateDoc } from 'firebase/firestore';
+import { X, Save, User, Phone, GraduationCap, Users } from 'lucide-react';
+import { doc, updateDoc, collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { toast } from 'react-hot-toast';
 import { Student } from '../../types/student';
-import { BLOOD_GROUPS, RELIGIONS, CLASSES, SECTIONS, CATEGORIES } from '../../utils/constants';
+import { BLOOD_GROUPS, RELIGIONS, CATEGORIES } from '../../utils/constants';
+
+interface Class {
+  id: string;
+  name: string;
+  sections: string[];
+  subjects: string[];
+  schedule: string;
+  capacity: number;
+}
 
 interface StudentViewProps {
   student: Student;
@@ -17,10 +26,48 @@ interface StudentViewProps {
 const StudentView: React.FC<StudentViewProps> = ({ student, onClose, isEditing = false, onUpdate }) => {
   const [editData, setEditData] = useState(student);
   const [loading, setLoading] = useState(false);
+  const [classes, setClasses] = useState<Class[]>([]);
+  const [availableSections, setAvailableSections] = useState<string[]>([]);
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, 'classes'), (snapshot) => {
+      const classData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Class[];
+      setClasses(classData);
+
+      // Update available sections when classes change
+      if (editData.class) {
+        const selectedClass = classData.find(cls => cls.name === editData.class);
+        if (selectedClass) {
+          setAvailableSections(selectedClass.sections);
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, [editData.class]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setEditData(prev => ({ ...prev, [name]: value }));
+    setEditData(prev => {
+      const newData = { ...prev, [name]: value };
+      
+      // Reset section if class changes
+      if (name === 'class') {
+        const selectedClass = classes.find(cls => cls.name === value);
+        if (selectedClass) {
+          setAvailableSections(selectedClass.sections);
+          newData.section = selectedClass.sections[0] || '';
+        } else {
+          setAvailableSections([]);
+          newData.section = '';
+        }
+      }
+      
+      return newData;
+    });
   };
 
   const handleSave = async () => {
@@ -114,21 +161,21 @@ const StudentView: React.FC<StudentViewProps> = ({ student, onClose, isEditing =
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-sm"
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Temporary Roll No</label>
-                    <input
-                      type="text"
-                      name="tempRollNo"
-                      value={editData.tempRollNo || ''}
-                      onChange={handleChange}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-sm"
-                    />
-                    {student.tempRollNo && student.tempRollNo !== editData.tempRollNo && (
+                  {editData.tempRollNo && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Temporary Roll No</label>
+                      <input
+                        type="text"
+                        value={editData.tempRollNo}
+                        readOnly
+                        disabled
+                        className="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 text-gray-600 shadow-sm text-sm cursor-not-allowed"
+                      />
                       <p className="text-xs text-gray-500 mt-1">
-                        Previous: {student.tempRollNo}
+                        Temporary roll number cannot be edited
                       </p>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="mt-2 space-y-1">
@@ -165,8 +212,9 @@ const StudentView: React.FC<StudentViewProps> = ({ student, onClose, isEditing =
                       onChange={handleChange}
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
                     >
-                      {CLASSES.map(cls => (
-                        <option key={cls} value={cls}>{cls}</option>
+                      <option value="">Select Class</option>
+                      {classes.map(cls => (
+                        <option key={cls.id} value={cls.name}>{cls.name}</option>
                       ))}
                     </select>
                   ) : (
@@ -181,8 +229,10 @@ const StudentView: React.FC<StudentViewProps> = ({ student, onClose, isEditing =
                       value={editData.section}
                       onChange={handleChange}
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                      disabled={!editData.class} // Disable if no class is selected
                     >
-                      {SECTIONS.map(section => (
+                      <option value="">Select Section</option>
+                      {availableSections.map(section => (
                         <option key={section} value={section}>{section}</option>
                       ))}
                     </select>

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { Upload, Plus, Minus, Save, Eye } from 'lucide-react';
 import { collection, addDoc, onSnapshot } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../../lib/firebase';
 import { toast } from 'react-hot-toast';
-import { BLOOD_GROUPS, RELIGIONS, SECTIONS, CATEGORIES } from '../../utils/constants';
+import { BLOOD_GROUPS, RELIGIONS, CATEGORIES } from '../../utils/constants';
 import { generateAdmissionNo } from '../../utils/generateAdmissionNo';
 import StudentView from './StudentView';
 
@@ -18,7 +18,7 @@ interface AcademicRecord {
 interface Class {
   id: string;
   name: string;
-  section: string;
+  sections: string[];
   subjects: string[];
   schedule: string;
   capacity: number;
@@ -54,7 +54,7 @@ const StudentAdmission = () => {
     previousSchool: '',
     class: '',
     section: '',
-    facility: 'day',
+    facility: 'day' as 'day' | 'boarding' | 'both',  
   });
 
   function generateTempRollNo() {
@@ -72,26 +72,39 @@ const StudentAdmission = () => {
         ...doc.data()
       })) as Class[];
       setClasses(classData);
+
+      // Update available sections if a class is selected
+      if (formData.class) {
+        const selectedClass = classData.find(cls => cls.name === formData.class);
+        if (selectedClass) {
+          setAvailableSections(selectedClass.sections);
+        }
+      }
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [formData.class]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-
-    // When class changes, update available sections
-    if (name === 'class') {
-      const selectedClass = classes.find(cls => cls.name === value);
-      if (selectedClass) {
-        setAvailableSections([selectedClass.section]);
-        // Reset section when class changes
-        setFormData(prev => ({ ...prev, [name]: value, section: '' }));
-      } else {
-        setAvailableSections([]);
+    setFormData(prev => {
+      const newData = { ...prev, [name]: value };
+      
+      // When class changes, update available sections
+      if (name === 'class') {
+        const selectedClass = classes.find(cls => cls.name === value);
+        if (selectedClass) {
+          setAvailableSections(selectedClass.sections);
+          // Reset section when class changes
+          newData.section = '';
+        } else {
+          setAvailableSections([]);
+          newData.section = '';
+        }
       }
-    }
+      
+      return newData;
+    });
   };
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -195,7 +208,7 @@ const StudentAdmission = () => {
       previousSchool: '',
       class: '',
       section: '',
-      facility: 'day',
+      facility: 'day' as 'day' | 'boarding' | 'both',  
     });
     setPhotoFile(null);
     setPhotoPreview('');
@@ -203,15 +216,22 @@ const StudentAdmission = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-lg p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">New Student Admission</h2>
-          <div className="text-sm text-gray-500">
-            Previous Academic Performance: {calculatePercentage()}%
-          </div>
-        </div>
+    <div className="max-w-5xl mx-auto py-6 space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-gray-900">New Student Admission</h2>
+        {formData.name && (
+          <button
+            type="button"
+            onClick={() => setShowPreview(true)}
+            className="flex items-center px-4 py-2 text-sm text-emerald-600 hover:text-emerald-700"
+          >
+            <Eye className="h-4 w-4 mr-2" />
+            Preview
+          </button>
+        )}
+      </div>
 
+      <form onSubmit={handleSubmit} className="space-y-8">
         {/* Photo Upload Section */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="col-span-1">
@@ -308,17 +328,18 @@ const StudentAdmission = () => {
         </div>
 
         {/* Academic Information */}
-        <div className="bg-gray-50 p-6 rounded-lg mb-8">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Academic Information</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 space-y-4">
+          <h3 className="text-lg font-semibold text-gray-900">Academic Information</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">Class</label>
               <select
                 name="class"
                 value={formData.class}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
                 required
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
               >
                 <option value="">Select Class</option>
                 {classes.map(cls => (
@@ -333,8 +354,9 @@ const StudentAdmission = () => {
                 name="section"
                 value={formData.section}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
                 required
+                disabled={!formData.class || availableSections.length === 0}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
               >
                 <option value="">Select Section</option>
                 {availableSections.map(section => (
@@ -349,12 +371,11 @@ const StudentAdmission = () => {
                 name="facility"
                 value={formData.facility}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
                 required
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
               >
                 <option value="day">Day Scholar</option>
-                <option value="boarding">Boarding</option>
-                <option value="both">Both</option>
+                <option value="hostel">Hostel</option>
               </select>
             </div>
           </div>
@@ -609,6 +630,7 @@ const StudentAdmission = () => {
             student={{
               ...formData,
               id: '',
+              rollNo: generateAdmissionNo(), // Adding rollNo property
               admissionNo: generateAdmissionNo(),
               photoUrl: photoPreview,
               admissionDate: new Date().toISOString(),

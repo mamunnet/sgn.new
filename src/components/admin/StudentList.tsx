@@ -1,16 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, orderBy, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
-import { Eye, Search, Edit, Trash2, Download } from 'lucide-react';
+import { Eye, Search, Edit, Trash2, Download, Filter } from 'lucide-react';
 import { Student } from '../../types/student';
 import StudentView from './StudentView';
 import { AnimatePresence } from 'framer-motion';
 import Swal from 'sweetalert2';
 import { toast } from 'react-hot-toast';
 
+interface Class {
+  id: string;
+  name: string;
+  sections: string[];
+  subjects: string[];
+  schedule: string;
+  capacity: number;
+}
+
 const StudentList = () => {
   const [students, setStudents] = useState<Student[]>([]);
+  const [classes, setClasses] = useState<Class[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedClass, setSelectedClass] = useState('');
+  const [selectedSection, setSelectedSection] = useState('');
+  const [availableSections, setAvailableSections] = useState<string[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -28,6 +41,29 @@ const StudentList = () => {
 
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, 'classes'), (snapshot) => {
+      const classData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Class[];
+      setClasses(classData);
+
+      // Update available sections when classes change
+      if (selectedClass) {
+        const selectedClassData = classData.find(cls => cls.name === selectedClass);
+        if (selectedClassData) {
+          setAvailableSections(selectedClassData.sections);
+        } else {
+          setAvailableSections([]);
+          setSelectedSection(''); // Reset section if class no longer exists
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, [selectedClass]);
 
   const handleEdit = (student: Student) => {
     setSelectedStudent(student);
@@ -77,13 +113,17 @@ const StudentList = () => {
 
   const filteredStudents = students.filter(student => {
     const searchString = searchTerm.toLowerCase();
-    return (
+    const matchesSearch = 
       student.name.toLowerCase().includes(searchString) ||
       student.admissionNo.toLowerCase().includes(searchString) ||
       (student.tempRollNo && student.tempRollNo.toLowerCase().includes(searchString)) ||
       (student.rollNo && student.rollNo.toLowerCase().includes(searchString)) ||
-      student.fatherName.toLowerCase().includes(searchString)
-    );
+      student.fatherName.toLowerCase().includes(searchString);
+
+    const matchesClass = !selectedClass || student.class === selectedClass;
+    const matchesSection = !selectedSection || student.section === selectedSection;
+
+    return matchesSearch && matchesClass && matchesSection;
   });
 
   return (
@@ -92,6 +132,52 @@ const StudentList = () => {
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Student List</h2>
         <div className="flex items-center space-x-4">
+          {/* Class Filter */}
+          <div className="flex items-center space-x-2">
+            <Filter className="text-gray-400 w-4 h-4" />
+            <select
+              value={selectedClass}
+              onChange={(e) => {
+                const newClass = e.target.value;
+                setSelectedClass(newClass);
+                setSelectedSection('');
+                
+                // Update available sections
+                if (newClass) {
+                  const selectedClassData = classes.find(cls => cls.name === newClass);
+                  if (selectedClassData) {
+                    setAvailableSections(selectedClassData.sections);
+                  } else {
+                    setAvailableSections([]);
+                  }
+                } else {
+                  setAvailableSections([]);
+                }
+              }}
+              className="rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+            >
+              <option value="">All Classes</option>
+              {classes.map(cls => (
+                <option key={cls.id} value={cls.name}>{cls.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Section Filter */}
+          {selectedClass && availableSections.length > 0 && (
+            <select
+              value={selectedSection}
+              onChange={(e) => setSelectedSection(e.target.value)}
+              className="rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+            >
+              <option value="">All Sections</option>
+              {availableSections.map(section => (
+                <option key={section} value={section}>{section}</option>
+              ))}
+            </select>
+          )}
+
+          {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
