@@ -5,12 +5,21 @@ import { db, storage } from '../../lib/firebase';
 import { toast } from 'react-hot-toast';
 import { Trash2, Edit, Plus, Upload, FileText } from 'lucide-react';
 
+interface Notice {
+  id?: string;
+  title: string;
+  content: string;
+  date: string;
+  pdfUrl?: string;
+  pdfPath?: string;
+}
+
 const NoticeManager = () => {
-  const [notices, setNotices] = useState([]);
+  const [notices, setNotices] = useState<Notice[]>([]);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [editingId, setEditingId] = useState(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
@@ -18,15 +27,15 @@ const NoticeManager = () => {
       const noticeData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
-      }));
+      })) as Notice[];
       setNotices(noticeData);
     });
 
     return () => unsubscribe();
   }, []);
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (!file) return;
 
     // Validate file type
@@ -44,13 +53,13 @@ const NoticeManager = () => {
     setSelectedFile(file);
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setUploading(true);
 
     try {
-      let pdfUrl = null;
-      let pdfPath = null;
+      let pdfUrl: string | undefined;
+      let pdfPath: string | undefined;
 
       if (selectedFile) {
         const storageRef = ref(storage, `notices/${Date.now()}_${selectedFile.name}`);
@@ -59,11 +68,11 @@ const NoticeManager = () => {
         pdfPath = storageRef.fullPath;
       }
 
-      const noticeData = {
+      const noticeData: Omit<Notice, 'id'> = {
         title,
         content,
         date: new Date().toISOString(),
-        ...(pdfUrl && { pdfUrl, pdfPath })
+        ...(pdfUrl && pdfPath ? { pdfUrl, pdfPath } : {})
       };
 
       if (editingId) {
@@ -96,13 +105,15 @@ const NoticeManager = () => {
     setEditingId(null);
   };
 
-  const handleEdit = (notice) => {
+  const handleEdit = (notice: Notice) => {
+    if (!notice.id) return;
     setTitle(notice.title);
     setContent(notice.content);
     setEditingId(notice.id);
   };
 
-  const handleDelete = async (notice) => {
+  const handleDelete = async (notice: Notice) => {
+    if (!notice.id) return;
     try {
       if (notice.pdfPath) {
         const storageRef = ref(storage, notice.pdfPath);

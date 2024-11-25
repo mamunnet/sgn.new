@@ -4,30 +4,39 @@ import { db } from '../../lib/firebase';
 import { toast } from 'react-hot-toast';
 import { Trash2, Edit, Plus } from 'lucide-react';
 
+interface Event {
+  id?: string;
+  title: string;
+  description: string;
+  date: string;
+  venue: string;
+  createdAt: string;
+}
+
 const EventManager = () => {
-  const [events, setEvents] = useState([]);
+  const [events, setEvents] = useState<Event[]>([]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState('');
   const [venue, setVenue] = useState('');
-  const [editingId, setEditingId] = useState(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, 'events'), (snapshot) => {
       const eventData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
-      }));
+      })) as Event[];
       setEvents(eventData);
     });
 
     return () => unsubscribe();
   }, []);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      const eventData = {
+      const eventData: Omit<Event, 'id'> = {
         title,
         description,
         date,
@@ -56,7 +65,8 @@ const EventManager = () => {
     setEditingId(null);
   };
 
-  const handleEdit = (event) => {
+  const handleEdit = (event: Event) => {
+    if (!event.id) return;
     setTitle(event.title);
     setDescription(event.description);
     setDate(event.date);
@@ -64,7 +74,8 @@ const EventManager = () => {
     setEditingId(event.id);
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id: string) => {
+    if (!id) return;
     try {
       await deleteDoc(doc(db, 'events', id));
       toast.success('Event deleted successfully');
@@ -164,7 +175,7 @@ const EventManager = () => {
                       <Edit className="h-5 w-5" />
                     </button>
                     <button
-                      onClick={() => handleDelete(event.id)}
+                      onClick={() => event.id && handleDelete(event.id)}
                       className="text-red-600 hover:text-red-800"
                     >
                       <Trash2 className="h-5 w-5" />

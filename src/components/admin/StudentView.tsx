@@ -6,6 +6,7 @@ import { db } from '../../lib/firebase';
 import { toast } from 'react-hot-toast';
 import { Student } from '../../types/student';
 import { BLOOD_GROUPS, RELIGIONS, CATEGORIES } from '../../utils/constants';
+import { dateToWords, formatDate } from '../../utils/dateUtils';
 
 interface Class {
   id: string;
@@ -129,82 +130,83 @@ const StudentView: React.FC<StudentViewProps> = ({ student, onClose, isEditing =
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Photo and Basic Info */}
-          <div className="md:col-span-1 flex flex-col items-center">
-            <div className="w-40 h-40 rounded-full overflow-hidden mb-4">
-              {student.photoUrl ? (
-                <img
-                  src={student.photoUrl}
-                  alt={student.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                  <User className="h-20 w-20 text-gray-400" />
-                </div>
-              )}
-            </div>
-            <div className="text-center">
-              <h3 className="text-xl font-bold text-gray-900">{student.name}</h3>
-              <p className="text-gray-600">Admission No: {student.admissionNo}</p>
-              
-              {/* Roll Number Section */}
-              {isEditing ? (
-                <div className="mt-4 space-y-2">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Permanent Roll No</label>
-                    <input
-                      type="text"
-                      name="rollNo"
-                      value={editData.rollNo || ''}
-                      onChange={handleChange}
-                      placeholder="Enter permanent roll no"
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-sm"
+          <div className="md:col-span-1 space-y-6">
+            <div className="bg-white rounded-lg p-6 shadow-sm">
+              <div className="flex flex-col items-center">
+                <div className="w-40 h-40 rounded-lg overflow-hidden mb-4 border-4 border-emerald-100">
+                  {student.photoUrl ? (
+                    <img
+                      src={student.photoUrl}
+                      alt={student.name}
+                      className="w-full h-full object-cover"
                     />
-                  </div>
-                  {editData.tempRollNo && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Temporary Roll No</label>
-                      <input
-                        type="text"
-                        value={editData.tempRollNo}
-                        readOnly
-                        disabled
-                        className="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 text-gray-600 shadow-sm text-sm cursor-not-allowed"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        Temporary roll number cannot be edited
-                      </p>
+                  ) : (
+                    <div className="w-full h-full bg-emerald-50 flex items-center justify-center">
+                      <User className="h-20 w-20 text-emerald-300" />
                     </div>
                   )}
                 </div>
-              ) : (
-                <div className="mt-2 space-y-1">
-                  {student.rollNo && (
-                    <p className="text-emerald-600 font-medium">
-                      Roll No: {student.rollNo}
-                    </p>
-                  )}
-                  {student.tempRollNo && (
-                    <p className="text-orange-600">
-                      Temp Roll No: {student.tempRollNo}
-                    </p>
+                <h3 className="text-xl font-bold text-gray-900 mb-1">{student.name}</h3>
+                <p className="text-sm text-gray-500 mb-3">Admission No: {student.admissionNo}</p>
+                
+                {/* Roll Numbers */}
+                <div className="w-full space-y-2">
+                  {isEditing ? (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600">Roll No</label>
+                        <input
+                          type="text"
+                          name="rollNo"
+                          value={editData.rollNo}
+                          onChange={handleChange}
+                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                        />
+                      </div>
+                      {student.tempRollNo && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-600">Temporary Roll No</label>
+                          <input
+                            type="text"
+                            value={student.tempRollNo}
+                            disabled
+                            className="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm"
+                          />
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      {student.rollNo && (
+                        <div className="bg-emerald-50 rounded-md p-3 text-center">
+                          <p className="text-sm text-emerald-600 font-medium">Roll No</p>
+                          <p className="text-lg font-semibold text-emerald-700">{student.rollNo}</p>
+                        </div>
+                      )}
+                      {student.tempRollNo && (
+                        <div className="bg-amber-50 rounded-md p-3 text-center">
+                          <p className="text-sm text-amber-600 font-medium">Temporary Roll No</p>
+                          <p className="text-lg font-semibold text-amber-700">{student.tempRollNo}</p>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
-              )}
+              </div>
             </div>
           </div>
 
           {/* Main Details */}
           <div className="md:col-span-2 space-y-6">
             {/* Academic Information */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h4 className="font-semibold text-gray-900 mb-4 flex items-center">
+            <div className="bg-white rounded-lg p-6 shadow-sm">
+              <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                 <GraduationCap className="h-5 w-5 mr-2 text-emerald-600" />
                 Academic Information
               </h4>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Class</label>
+                  <p className="text-sm font-medium text-gray-600">Class</p>
                   {isEditing ? (
                     <select
                       name="class"
@@ -212,36 +214,33 @@ const StudentView: React.FC<StudentViewProps> = ({ student, onClose, isEditing =
                       onChange={handleChange}
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
                     >
-                      <option value="">Select Class</option>
                       {classes.map(cls => (
                         <option key={cls.id} value={cls.name}>{cls.name}</option>
                       ))}
                     </select>
                   ) : (
-                    <p className="mt-1 text-gray-900">{student.class}</p>
+                    <p className="text-gray-900">{student.class}</p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Section</label>
+                  <p className="text-sm font-medium text-gray-600">Section</p>
                   {isEditing ? (
                     <select
                       name="section"
                       value={editData.section}
                       onChange={handleChange}
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
-                      disabled={!editData.class} // Disable if no class is selected
                     >
-                      <option value="">Select Section</option>
                       {availableSections.map(section => (
                         <option key={section} value={section}>{section}</option>
                       ))}
                     </select>
                   ) : (
-                    <p className="mt-1 text-gray-900">{student.section}</p>
+                    <p className="text-gray-900">{student.section}</p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Facility</label>
+                  <p className="text-sm font-medium text-gray-600">Facility</p>
                   {isEditing ? (
                     <select
                       name="facility"
@@ -254,15 +253,29 @@ const StudentView: React.FC<StudentViewProps> = ({ student, onClose, isEditing =
                       <option value="both">Both</option>
                     </select>
                   ) : (
-                    <p className="mt-1 text-gray-900">
+                    <p className="text-gray-900">
                       {student.facility === 'day' ? 'Day Scholar' : 
                        student.facility === 'boarding' ? 'Boarding' : 'Both'}
                     </p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Admission Date</label>
-                  <p className="mt-1 text-gray-900">
+                  <p className="text-sm font-medium text-gray-600">Previous School</p>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      name="previousSchool"
+                      value={editData.previousSchool}
+                      onChange={handleChange}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                    />
+                  ) : (
+                    <p className="text-gray-900">{student.previousSchool}</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Admission Date</p>
+                  <p className="text-gray-900">
                     {new Date(student.admissionDate).toLocaleDateString()}
                   </p>
                 </div>
@@ -270,14 +283,14 @@ const StudentView: React.FC<StudentViewProps> = ({ student, onClose, isEditing =
             </div>
 
             {/* Personal Information */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h4 className="font-semibold text-gray-900 mb-4 flex items-center">
+            <div className="bg-white rounded-lg p-6 shadow-sm">
+              <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                 <User className="h-5 w-5 mr-2 text-emerald-600" />
                 Personal Information
               </h4>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Date of Birth</label>
+                  <p className="text-sm font-medium text-gray-600">Date of Birth</p>
                   {isEditing ? (
                     <input
                       type="date"
@@ -287,13 +300,31 @@ const StudentView: React.FC<StudentViewProps> = ({ student, onClose, isEditing =
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
                     />
                   ) : (
-                    <p className="mt-1 text-gray-900">
-                      {new Date(student.dateOfBirth).toLocaleDateString()}
-                    </p>
+                    <div className="space-y-1">
+                      <p className="text-gray-900">{formatDate(student.dateOfBirth)}</p>
+                      <p className="text-sm text-gray-600">({dateToWords(student.dateOfBirth)})</p>
+                    </div>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Blood Group</label>
+                  <p className="text-sm font-medium text-gray-600">Gender</p>
+                  {isEditing ? (
+                    <select
+                      name="gender"
+                      value={editData.gender}
+                      onChange={handleChange}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                    >
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                      <option value="other">Other</option>
+                    </select>
+                  ) : (
+                    <p className="text-gray-900">{student.gender}</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Blood Group</p>
                   {isEditing ? (
                     <select
                       name="bloodGroup"
@@ -306,11 +337,11 @@ const StudentView: React.FC<StudentViewProps> = ({ student, onClose, isEditing =
                       ))}
                     </select>
                   ) : (
-                    <p className="mt-1 text-gray-900">{student.bloodGroup}</p>
+                    <p className="text-gray-900">{student.bloodGroup}</p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Religion</label>
+                  <p className="text-sm font-medium text-gray-600">Religion</p>
                   {isEditing ? (
                     <select
                       name="religion"
@@ -323,11 +354,11 @@ const StudentView: React.FC<StudentViewProps> = ({ student, onClose, isEditing =
                       ))}
                     </select>
                   ) : (
-                    <p className="mt-1 text-gray-900">{student.religion}</p>
+                    <p className="text-gray-900">{student.religion}</p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Category</label>
+                  <p className="text-sm font-medium text-gray-600">Category</p>
                   {isEditing ? (
                     <select
                       name="category"
@@ -340,11 +371,11 @@ const StudentView: React.FC<StudentViewProps> = ({ student, onClose, isEditing =
                       ))}
                     </select>
                   ) : (
-                    <p className="mt-1 text-gray-900">{student.category}</p>
+                    <p className="text-gray-900">{student.category}</p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Nationality</label>
+                  <p className="text-sm font-medium text-gray-600">Nationality</p>
                   {isEditing ? (
                     <input
                       type="text"
@@ -354,11 +385,11 @@ const StudentView: React.FC<StudentViewProps> = ({ student, onClose, isEditing =
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
                     />
                   ) : (
-                    <p className="mt-1 text-gray-900">{student.nationality}</p>
+                    <p className="text-gray-900">{student.nationality}</p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Aadhar Number</label>
+                  <p className="text-sm font-medium text-gray-600">Aadhar Number</p>
                   {isEditing ? (
                     <input
                       type="text"
@@ -368,59 +399,21 @@ const StudentView: React.FC<StudentViewProps> = ({ student, onClose, isEditing =
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
                     />
                   ) : (
-                    <p className="mt-1 text-gray-900">{student.aadharNo}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Family Information */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h4 className="font-semibold text-gray-900 mb-4 flex items-center">
-                <Users className="h-5 w-5 mr-2 text-emerald-600" />
-                Family Information
-              </h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Father's Name</label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      name="fatherName"
-                      value={editData.fatherName}
-                      onChange={handleChange}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
-                    />
-                  ) : (
-                    <p className="mt-1 text-gray-900">{student.fatherName}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Mother's Name</label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      name="motherName"
-                      value={editData.motherName}
-                      onChange={handleChange}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
-                    />
-                  ) : (
-                    <p className="mt-1 text-gray-900">{student.motherName}</p>
+                    <p className="text-gray-900">{student.aadharNo}</p>
                   )}
                 </div>
               </div>
             </div>
 
             {/* Contact Information */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h4 className="font-semibold text-gray-900 mb-4 flex items-center">
+            <div className="bg-white rounded-lg p-6 shadow-sm">
+              <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                 <Phone className="h-5 w-5 mr-2 text-emerald-600" />
                 Contact Information
               </h4>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Phone</label>
+                  <p className="text-sm font-medium text-gray-600">Phone</p>
                   {isEditing ? (
                     <input
                       type="tel"
@@ -430,11 +423,11 @@ const StudentView: React.FC<StudentViewProps> = ({ student, onClose, isEditing =
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
                     />
                   ) : (
-                    <p className="mt-1 text-gray-900">{student.phone}</p>
+                    <p className="text-gray-900">{student.phone}</p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Email</label>
+                  <p className="text-sm font-medium text-gray-600">Email</p>
                   {isEditing ? (
                     <input
                       type="email"
@@ -444,11 +437,11 @@ const StudentView: React.FC<StudentViewProps> = ({ student, onClose, isEditing =
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
                     />
                   ) : (
-                    <p className="mt-1 text-gray-900">{student.email}</p>
+                    <p className="text-gray-900">{student.email}</p>
                   )}
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700">Address</label>
+                  <p className="text-sm font-medium text-gray-600">Address</p>
                   {isEditing ? (
                     <textarea
                       name="address"
@@ -458,7 +451,45 @@ const StudentView: React.FC<StudentViewProps> = ({ student, onClose, isEditing =
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
                     />
                   ) : (
-                    <p className="mt-1 text-gray-900">{student.address}</p>
+                    <p className="text-gray-900">{student.address}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Family Information */}
+            <div className="bg-white rounded-lg p-6 shadow-sm">
+              <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <Users className="h-5 w-5 mr-2 text-emerald-600" />
+                Family Information
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Father's Name</p>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      name="fatherName"
+                      value={editData.fatherName}
+                      onChange={handleChange}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                    />
+                  ) : (
+                    <p className="text-gray-900">{student.fatherName}</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Mother's Name</p>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      name="motherName"
+                      value={editData.motherName}
+                      onChange={handleChange}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                    />
+                  ) : (
+                    <p className="text-gray-900">{student.motherName}</p>
                   )}
                 </div>
               </div>

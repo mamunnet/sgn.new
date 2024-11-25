@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
 import { User, Lock, Mail, Save, X, Eye, EyeOff } from 'lucide-react';
 import { auth } from '../../lib/firebase';
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, orderBy, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
-import { Eye, Search, Edit, Trash2, Download, Filter } from 'lucide-react';
+import { Eye, Search, Edit, Trash2, Filter } from 'lucide-react';
 import { Student } from '../../types/student';
 import StudentView from './StudentView';
 import { AnimatePresence } from 'framer-motion';

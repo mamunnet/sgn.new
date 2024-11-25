@@ -42,6 +42,11 @@ const TCPreview: React.FC<TCPreviewProps> = ({ data, onClose, onGenerate }) => {
 
   const pronouns = getPronouns();
 
+  const dateToWords = (date: string) => {
+    const dateObject = new Date(date);
+    return dateObject.toLocaleDateString('en-US', { dateStyle: 'long' });
+  };
+
   const handlePrint = () => {
     window.print();
   };
@@ -128,23 +133,23 @@ const TCPreview: React.FC<TCPreviewProps> = ({ data, onClose, onGenerate }) => {
                 alt="SGN Academy"
                 className="w-24 mx-auto mb-4"
               />
-              <h1 className="text-3xl font-bold text-[#234f1e] mb-2 font-serif">SGN ACADEMY</h1>
-              <p className="text-sm text-gray-700">Haripur, Rajarampur, Lalgola, Murshidabad</p>
-              <p className="text-sm text-gray-700">Phone: 8017528621</p>
-              <p className="text-sm text-gray-700 mb-6">DISE Code: 45748</p>
+              <h1 className="text-4xl font-bold text-[#234f1e] mb-2 font-serif">SGN ACADEMY</h1>
+              <p className="text-base text-gray-700 font-serif">Haripur, Rajarampur, Lalgola, Murshidabad</p>
+              <p className="text-base text-gray-700 font-serif">Phone: 8017528621</p>
+              <p className="text-base text-gray-700 font-serif">DISE Code: 45748</p>
               
               <div className="flex justify-between items-center text-gray-700 mb-6 px-4">
-                <span className="font-serif">Sl. No: {data.serialNo}</span>
-                <span className="font-serif">Date: {new Date(data.date).toLocaleDateString()}</span>
+                <span className="text-lg font-serif">Sl. No: {data.serialNo}</span>
+                <span className="text-lg font-serif">Date: {new Date(data.date).toLocaleDateString()}</span>
               </div>
               
-              <h2 className="text-2xl font-bold text-[#234f1e] border-2 border-[#234f1e] inline-block px-8 py-2 font-serif">
+              <h2 className="text-3xl font-bold text-[#234f1e] border-2 border-[#234f1e] inline-block px-8 py-2 font-serif">
                 TRANSFER CERTIFICATE
               </h2>
             </div>
 
             {/* Certificate Body */}
-            <div className="space-y-6 text-gray-800 leading-relaxed font-serif">
+            <div className="space-y-6 text-gray-800 leading-relaxed font-serif text-lg">
               <p>
                 This is to certify that <span className="font-semibold">{data.studentName}</span>
               </p>
@@ -171,10 +176,7 @@ const TCPreview: React.FC<TCPreviewProps> = ({ data, onClose, onGenerate }) => {
               <p>All the dues are cleared.</p>
               <p>
                 {pronouns.possessive} date of birth according to our Admission Register is{' '}
-                <span className="font-semibold">{new Date(data.dateOfBirth).toLocaleDateString()}</span>{' '}
-                (in words) <span className="font-semibold">
-                  {new Date(data.dateOfBirth).toLocaleDateString('en-US', { dateStyle: 'long' })}
-                </span>
+                <span className="font-semibold">{dateToWords(data.dateOfBirth)}</span>
               </p>
               <p>
                 {pronouns.possessive} character and conduct were <span className="font-semibold">{data.character}</span>
@@ -216,9 +218,9 @@ const TCPreview: React.FC<TCPreviewProps> = ({ data, onClose, onGenerate }) => {
                   </div>
                   <div className="text-center">
                     <div className="mb-2 w-40 border-b-2 border-gray-600"></div>
-                    <p className="font-semibold">Principal</p>
-                    <p>SGN Academy</p>
-                    <p>Lalgola, Murshidabad</p>
+                    <p className="font-semibold text-lg">Principal</p>
+                    <p className="text-base">SGN Academy</p>
+                    <p className="text-base">Lalgola, Murshidabad</p>
                   </div>
                 </div>
               </div>

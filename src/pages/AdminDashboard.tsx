@@ -16,19 +16,23 @@ import {
   UserPlus,
   ClipboardList,
   Settings,
-  UserCog,
   DollarSign,
   ImageIcon,
-  BookOpen
+  BookOpen,
+  School,
+  FolderKanban
 } from 'lucide-react';
 
 const AdminDashboard = () => {
-  const [isStudentMenuOpen, setIsStudentMenuOpen] = useState(false);
+  const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
+    students: false,
+    academic: false,
+    content: false
+  });
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
 
-  // Verify admin access
   useEffect(() => {
     if (!user || user.email !== import.meta.env.VITE_ADMIN_EMAIL) {
       navigate('/sgnadminpanel');
@@ -50,6 +54,13 @@ const AdminDashboard = () => {
   const isActive = (path: string) => {
     const currentPath = location.pathname.split('/sgnadminpanel/')[1] || '';
     return currentPath === path;
+  };
+
+  const toggleMenu = (menu: string) => {
+    setOpenMenus(prev => ({
+      ...prev,
+      [menu]: !prev[menu]
+    }));
   };
 
   return (
@@ -75,17 +86,17 @@ const AdminDashboard = () => {
           {/* Students Menu */}
           <div>
             <button
-              onClick={() => setIsStudentMenuOpen(!isStudentMenuOpen)}
+              onClick={() => toggleMenu('students')}
               className={`w-full flex items-center px-6 py-3 text-white/90 hover:bg-white/10 transition-colors ${
                 location.pathname.includes('student-') ? 'bg-white/20' : ''
               }`}
             >
               <GraduationCap className="h-5 w-5 mr-3" />
               <span>Students</span>
-              <ChevronDown className={`h-4 w-4 ml-auto transition-transform ${isStudentMenuOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`h-4 w-4 ml-auto transition-transform ${openMenus.students ? 'rotate-180' : ''}`} />
             </button>
             
-            {isStudentMenuOpen && (
+            {openMenus.students && (
               <div className="bg-black/10">
                 <Link
                   to="student-admission"
@@ -109,95 +120,124 @@ const AdminDashboard = () => {
             )}
           </div>
 
-          <Link
-            to="staff-manager"
-            className={`flex items-center px-6 py-3 text-white/90 hover:bg-white/10 transition-colors ${
-              isActive('staff-manager') ? 'bg-white/20' : ''
-            }`}
-          >
-            <UserCog className="h-5 w-5 mr-3" />
-            Staff
-          </Link>
+          {/* Academic Menu */}
+          <div>
+            <button
+              onClick={() => toggleMenu('academic')}
+              className={`w-full flex items-center px-6 py-3 text-white/90 hover:bg-white/10 transition-colors ${
+                location.pathname.includes('academic-') ? 'bg-white/20' : ''
+              }`}
+            >
+              <School className="h-5 w-5 mr-3" />
+              <span>Academic</span>
+              <ChevronDown className={`h-4 w-4 ml-auto transition-transform ${openMenus.academic ? 'rotate-180' : ''}`} />
+            </button>
+            
+            {openMenus.academic && (
+              <div className="bg-black/10">
+                <Link
+                  to="classes"
+                  className={`flex items-center px-6 py-3 text-white/90 hover:bg-white/10 pl-14 ${
+                    isActive('classes') ? 'bg-white/20' : ''
+                  }`}
+                >
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  Classes
+                </Link>
+                <Link
+                  to="tc-generator"
+                  className={`flex items-center px-6 py-3 text-white/90 hover:bg-white/10 pl-14 ${
+                    isActive('tc-generator') ? 'bg-white/20' : ''
+                  }`}
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  TC Generator
+                </Link>
+                <Link
+                  to="fees-manager"
+                  className={`flex items-center px-6 py-3 text-white/90 hover:bg-white/10 pl-14 ${
+                    isActive('fees-manager') ? 'bg-white/20' : ''
+                  }`}
+                >
+                  <DollarSign className="h-4 w-4 mr-2" />
+                  Fees
+                </Link>
+              </div>
+            )}
+          </div>
 
-          <Link
-            to="fees-manager"
-            className={`flex items-center px-6 py-3 text-white/90 hover:bg-white/10 transition-colors ${
-              isActive('fees-manager') ? 'bg-white/20' : ''
-            }`}
-          >
-            <DollarSign className="h-5 w-5 mr-3" />
-            Fees
-          </Link>
-
-          <Link
-            to="banner"
-            className={`flex items-center px-6 py-3 text-white/90 hover:bg-white/10 transition-colors ${
-              isActive('banner') ? 'bg-white/20' : ''
-            }`}
-          >
-            <Image className="h-5 w-5 mr-3" />
-            Banners
-          </Link>
-          
-          <Link
-            to="notice"
-            className={`flex items-center px-6 py-3 text-white/90 hover:bg-white/10 transition-colors ${
-              isActive('notice') ? 'bg-white/20' : ''
-            }`}
-          >
-            <Bell className="h-5 w-5 mr-3" />
-            Notices
-          </Link>
-          
-          <Link
-            to="events"
-            className={`flex items-center px-6 py-3 text-white/90 hover:bg-white/10 transition-colors ${
-              isActive('events') ? 'bg-white/20' : ''
-            }`}
-          >
-            <Calendar className="h-5 w-5 mr-3" />
-            Events
-          </Link>
-          
-          <Link
-            to="alumni"
-            className={`flex items-center px-6 py-3 text-white/90 hover:bg-white/10 transition-colors ${
-              isActive('alumni') ? 'bg-white/20' : ''
-            }`}
-          >
-            <Users className="h-5 w-5 mr-3" />
-            Alumni
-          </Link>
-          
-          <Link
-            to="gallery-manager"
-            className={`flex items-center px-6 py-3 text-white/90 hover:bg-white/10 transition-colors ${
-              isActive('gallery-manager') ? 'bg-white/20' : ''
-            }`}
-          >
-            <ImageIcon className="h-5 w-5 mr-3" />
-            Gallery
-          </Link>
-          
-          <Link
-            to="classes"
-            className={`flex items-center px-6 py-3 text-white/90 hover:bg-white/10 transition-colors ${
-              isActive('classes') ? 'bg-white/20' : ''
-            }`}
-          >
-            <BookOpen className="h-5 w-5 mr-3" />
-            Classes
-          </Link>
-
-          <Link
-            to="tc-generator"
-            className={`flex items-center px-6 py-3 text-white/90 hover:bg-white/10 transition-colors ${
-              isActive('tc-generator') ? 'bg-white/20' : ''
-            }`}
-          >
-            <FileText className="h-5 w-5 mr-3" />
-            TC Generator
-          </Link>
+          {/* Content Menu */}
+          <div>
+            <button
+              onClick={() => toggleMenu('content')}
+              className={`w-full flex items-center px-6 py-3 text-white/90 hover:bg-white/10 transition-colors ${
+                location.pathname.includes('content-') ? 'bg-white/20' : ''
+              }`}
+            >
+              <FolderKanban className="h-5 w-5 mr-3" />
+              <span>Content</span>
+              <ChevronDown className={`h-4 w-4 ml-auto transition-transform ${openMenus.content ? 'rotate-180' : ''}`} />
+            </button>
+            
+            {openMenus.content && (
+              <div className="bg-black/10">
+                <Link
+                  to="banner"
+                  className={`flex items-center px-6 py-3 text-white/90 hover:bg-white/10 pl-14 ${
+                    isActive('banner') ? 'bg-white/20' : ''
+                  }`}
+                >
+                  <Image className="h-4 w-4 mr-2" />
+                  Banners
+                </Link>
+                <Link
+                  to="notice"
+                  className={`flex items-center px-6 py-3 text-white/90 hover:bg-white/10 pl-14 ${
+                    isActive('notice') ? 'bg-white/20' : ''
+                  }`}
+                >
+                  <Bell className="h-4 w-4 mr-2" />
+                  Notices
+                </Link>
+                <Link
+                  to="events"
+                  className={`flex items-center px-6 py-3 text-white/90 hover:bg-white/10 pl-14 ${
+                    isActive('events') ? 'bg-white/20' : ''
+                  }`}
+                >
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Events
+                </Link>
+                <Link
+                  to="gallery-manager"
+                  className={`flex items-center px-6 py-3 text-white/90 hover:bg-white/10 pl-14 ${
+                    isActive('gallery-manager') ? 'bg-white/20' : ''
+                  }`}
+                >
+                  <ImageIcon className="h-4 w-4 mr-2" />
+                  Gallery
+                </Link>
+                <Link
+                  to="staff-manager"
+                  className={`flex items-center px-6 py-3 text-white/90 hover:bg-white/10 pl-14 ${
+                    isActive('staff-manager') ? 'bg-white/20' : ''
+                  }`}
+                >
+                  <Users className="h-4 w-4 mr-2" />
+                  Staff
+                </Link>
+                <Link
+                  to="alumni"
+                  className={`flex items-center px-6 py-3 text-white/90 hover:bg-white/10 pl-14 ${
+                    isActive('alumni') ? 'bg-white/20' : ''
+                  }`}
+                >
+                  <Users className="h-4 w-4 mr-2" />
+                  Alumni
+                </Link>
+              </div>
+            )}
+          </div>
 
           <Link
             to="admin-profile"
@@ -206,12 +246,12 @@ const AdminDashboard = () => {
             }`}
           >
             <Settings className="h-5 w-5 mr-3" />
-            Profile Settings
+            Profile
           </Link>
-          
+
           <button
             onClick={handleLogout}
-            className="w-full flex items-center px-6 py-3 text-white/90 hover:bg-white/10 transition-colors mt-4"
+            className="w-full flex items-center px-6 py-3 text-white/90 hover:bg-white/10 transition-colors"
           >
             <LogOut className="h-5 w-5 mr-3" />
             Logout
@@ -220,7 +260,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto bg-gray-50">
+      <div className="flex-1 overflow-auto">
         <div className="p-8">
           <Outlet />
         </div>

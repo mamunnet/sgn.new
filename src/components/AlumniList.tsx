@@ -5,9 +5,19 @@ import { Users, Briefcase, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SectionHeading from './SectionHeading';
 
+interface Alumni {
+  id: string;
+  name: string;
+  batch: string;
+  occupation: string;
+  testimonial: string;
+  photoUrl: string;
+  updatedAt: any;
+}
+
 const AlumniList = () => {
-  const [alumni, setAlumni] = useState([]);
-  const [selectedAlumni, setSelectedAlumni] = useState(null);
+  const [alumni, setAlumni] = useState<Alumni[]>([]);
+  const [selectedAlumni, setSelectedAlumni] = useState<Alumni | null>(null);
 
   useEffect(() => {
     const q = query(
@@ -20,7 +30,7 @@ const AlumniList = () => {
       const alumniData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
-      }));
+      })) as Alumni[];
       setAlumni(alumniData);
     });
 

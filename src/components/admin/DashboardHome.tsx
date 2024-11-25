@@ -1,20 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { useAuthState } from 'react-firebase-hooks/auth';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
-import { auth, db } from '../../lib/firebase';
+import { db } from '../../lib/firebase';
 import { Activity, Bell, Calendar, Users, GraduationCap, FileText, TrendingUp, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
+interface DashboardStats {
+  totalStudents: number;
+  activeNotices: number;
+  upcomingEvents: number;
+  totalAlumni: number;
+  totalCertificates: number;
+}
+
+interface DashboardActivity {
+  type: 'notice' | 'event';
+  title: string;
+  date: string;
+}
+
 const DashboardHome = () => {
-  const [user] = useAuthState(auth);
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<DashboardStats>({
     totalStudents: 0,
     activeNotices: 0,
     upcomingEvents: 0,
     totalAlumni: 0,
     totalCertificates: 0
   });
-  const [recentActivities, setRecentActivities] = useState([]);
+  const [recentActivities, setRecentActivities] = useState<DashboardActivity[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -55,7 +67,7 @@ const DashboardHome = () => {
         });
 
         // Fetch recent activities
-        const activities = [];
+        const activities: DashboardActivity[] = [];
 
         // Add recent notices
         const recentNoticesQuery = query(
@@ -88,7 +100,7 @@ const DashboardHome = () => {
         });
 
         // Sort activities by date
-        activities.sort((a, b) => new Date(b.date) - new Date(a.date));
+        activities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         setRecentActivities(activities.slice(0, 5));
 
         setLoading(false);

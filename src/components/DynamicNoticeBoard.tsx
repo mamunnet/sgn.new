@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { Bell, Calendar, FileText, Download } from 'lucide-react';
+import { Bell, Download, Calendar, FileText } from 'lucide-react';
 import { motion } from 'framer-motion';
 import SectionHeading from './SectionHeading';
 

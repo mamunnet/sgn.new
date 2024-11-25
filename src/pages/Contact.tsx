@@ -257,7 +257,6 @@ const Contact = () => {
           </a>
           <button
             onClick={() => {
-              const mapUrl = 'https://www.google.com/maps/embed?pb=!4v1700378860799!6m8!1m7!1sCAoSLEFGMVFpcE1GWkNNNVZhRXVlRDlQYmFKVWtfcEFLYjZELXFYSHZKNkxjNnJn!2m2!1d24.3651904!2d88.1906418!3f0!4f0!5f0.7820865974627469';
               const iframe = document.querySelector('iframe');
               if (iframe) {
                 iframe.src = iframe.src.includes('&map_action=pano') 
@@ -274,6 +273,18 @@ const Contact = () => {
             Toggle View
           </button>
         </div>
+      </div>
+      <div className="mt-12">
+        <iframe
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3022.1!2d-73.9!3d40.7!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zM40zMDA!5e0!3m2!1sen!2sus!4v1"
+          width="100%"
+          height="450"
+          style={{ border: 0 }}
+          allowFullScreen
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+          className="rounded-lg shadow-lg"
+        ></iframe>
       </div>
     </div>
   );
