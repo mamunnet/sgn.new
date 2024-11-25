@@ -18,7 +18,8 @@ import {
   Settings,
   UserCog,
   DollarSign,
-  ImageIcon
+  ImageIcon,
+  BookOpen
 } from 'lucide-react';
 
 const AdminDashboard = () => {
@@ -178,6 +179,16 @@ const AdminDashboard = () => {
             Gallery
           </Link>
           
+          <Link
+            to="classes"
+            className={`flex items-center px-6 py-3 text-white/90 hover:bg-white/10 transition-colors ${
+              isActive('classes') ? 'bg-white/20' : ''
+            }`}
+          >
+            <BookOpen className="h-5 w-5 mr-3" />
+            Classes
+          </Link>
+
           <Link
             to="tc-generator"
             className={`flex items-center px-6 py-3 text-white/90 hover:bg-white/10 transition-colors ${

@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, Plus, Minus, Save, Eye } from 'lucide-react';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../../lib/firebase';
 import { toast } from 'react-hot-toast';
-import { BLOOD_GROUPS, RELIGIONS, CLASSES, SECTIONS, CATEGORIES } from '../../utils/constants';
+import { BLOOD_GROUPS, RELIGIONS, SECTIONS, CATEGORIES } from '../../utils/constants';
 import { generateAdmissionNo } from '../../utils/generateAdmissionNo';
 import StudentView from './StudentView';
 
@@ -13,6 +13,17 @@ interface AcademicRecord {
   subject: string;
   marks: string;
   totalMarks: string;
+}
+
+interface Class {
+  id: string;
+  name: string;
+  section: string;
+  subjects: string[];
+  schedule: string;
+  capacity: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 const StudentAdmission = () => {
@@ -23,7 +34,8 @@ const StudentAdmission = () => {
   const [academicRecords, setAcademicRecords] = useState<AcademicRecord[]>([
     { subject: '', marks: '', totalMarks: '100' }
   ]);
-
+  const [classes, setClasses] = useState<Class[]>([]);
+  const [availableSections, setAvailableSections] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     tempRollNo: generateTempRollNo(),
@@ -52,9 +64,34 @@ const StudentAdmission = () => {
     return `${prefix}/${timestamp}/${random}`;
   }
 
+  useEffect(() => {
+    // Fetch classes from Firestore
+    const unsubscribe = onSnapshot(collection(db, 'classes'), (snapshot) => {
+      const classData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Class[];
+      setClasses(classData);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+
+    // When class changes, update available sections
+    if (name === 'class') {
+      const selectedClass = classes.find(cls => cls.name === value);
+      if (selectedClass) {
+        setAvailableSections([selectedClass.section]);
+        // Reset section when class changes
+        setFormData(prev => ({ ...prev, [name]: value, section: '' }));
+      } else {
+        setAvailableSections([]);
+      }
+    }
   };
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -284,8 +321,8 @@ const StudentAdmission = () => {
                 required
               >
                 <option value="">Select Class</option>
-                {CLASSES.map(cls => (
-                  <option key={cls} value={cls}>{cls}</option>
+                {classes.map(cls => (
+                  <option key={cls.id} value={cls.name}>{cls.name}</option>
                 ))}
               </select>
             </div>
@@ -300,7 +337,7 @@ const StudentAdmission = () => {
                 required
               >
                 <option value="">Select Section</option>
-                {SECTIONS.map(section => (
+                {availableSections.map(section => (
                   <option key={section} value={section}>{section}</option>
                 ))}
               </select>

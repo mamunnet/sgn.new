@@ -37,6 +37,7 @@ import FeesManager from './components/admin/FeesManager';
 import StudentView from './components/admin/StudentView';
 import TCPreview from './components/admin/TCPreview';
 import GalleryManager from './components/admin/GalleryManager';
+import ClassManager from './components/admin/ClassManager';
 
 const App: React.FC = () => {
   useEffect(() => {
@@ -100,6 +101,7 @@ const App: React.FC = () => {
                             <Route path="student-view/:id" element={<StudentView />} />
                             <Route path="tc-preview/:id" element={<TCPreview />} />
                             <Route path="gallery-manager" element={<GalleryManager />} />
+                            <Route path="classes" element={<ClassManager />} />
                           </Route>
                         </Routes>
                       </ProtectedRoute>
