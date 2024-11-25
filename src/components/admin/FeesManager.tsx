@@ -10,11 +10,21 @@ import {
   Filter,
   AlertCircle,
   CheckCircle,
-  Clock
+  Clock,
+  CreditCard
 } from 'lucide-react';
 import type { Fee, FeePayment, Student, AdditionalFee } from '../../types/index';
 import FeeReceiptModal from './FeeReceiptModal';
 import PaymentModal from './PaymentModal';
+
+// Utility function to get month name
+const getMonthName = (month: number): string => {
+  const months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+  return months[month - 1] || '';
+};
 
 const FeesManager = () => {
   const [students, setStudents] = useState<Student[]>([]);
@@ -32,12 +42,18 @@ const FeesManager = () => {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPaymentDetails, setSelectedPaymentDetails] = useState<{
-    student: Student;
+    student: Student | null;
     amount: number;
     feeType: string;
     academicYear: string;
-    month?: string;
-  } | null>(null);
+    month: string;
+  }>({
+    student: null,
+    amount: 0,
+    feeType: '',
+    academicYear: '',
+    month: '',
+  });
 
   // Fee structure constants
   const DEFAULT_CLASS_FEES = {
@@ -228,47 +244,51 @@ const FeesManager = () => {
     fetchData();
   }, [selectedMonth, selectedYear]);
 
-  const recordPayment = async (fee: Fee) => {
+  const loadPayments = async () => {
     try {
-      const paymentData: Omit<FeePayment, 'id'> = {
-        feeId: fee.id,
-        studentId: fee.studentId,
-        amount: fee.finalAmount || fee.amount,
-        paymentDate: new Date().toISOString(),
-        paymentMethod: 'cash',
-        receiptNo: `RCP${Date.now()}`,
-        createdAt: new Date().toISOString(),
-        discountApplied: fee.discount,
-        discountType: fee.discountType,
-        additionalFees: fee.additionalFees,
-        totalAmount: fee.totalAmount || fee.amount
-      };
-
-      // Add payment record
-      const paymentRef = await addDoc(collection(db, 'feePayments'), paymentData);
-      const payment: FeePayment = { id: paymentRef.id, ...paymentData };
-
-      // Update fee status
-      await updateDoc(doc(db, 'fees', fee.id), {
-        status: 'paid',
-        updatedAt: new Date().toISOString()
-      });
-
-      // Update local state
-      setPayments(prevPayments => [...prevPayments, payment]);
-      setFees(prevFees => 
-        prevFees.map(f => f.id === fee.id ? { ...f, status: 'paid' } : f)
+      setLoading(true);
+      const paymentsRef = collection(db, 'payments');
+      const paymentsQuery = query(
+        paymentsRef,
+        where('academicYear', '==', selectedYear.toString())
       );
-
-      // Show receipt
-      setSelectedPayment(payment);
-      setShowReceiptModal(true);
-
-      toast.success('Payment recorded successfully');
+      const snapshot = await getDocs(paymentsQuery);
+      const paymentsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as FeePayment[];
+      setPayments(paymentsData);
     } catch (error) {
-      console.error('Error recording payment:', error);
-      toast.error('Error recording payment');
+      console.error('Error loading payments:', error);
+      toast.error('Failed to load payments');
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    loadPayments();
+  }, [selectedYear]);
+
+  const getStudentById = (studentId: string): Student | null => {
+    return students.find(s => s.id === studentId) || null;
+  };
+
+  const handlePaymentClick = (studentId: string, amount: number, feeType: string, month: string) => {
+    const student = getStudentById(studentId);
+    setSelectedPaymentDetails({
+      student,
+      amount,
+      feeType,
+      academicYear: selectedYear.toString(),
+      month: month || getMonthName(selectedMonth),
+    });
+    setShowPaymentModal(true);
+  };
+
+  const handlePaymentSuccess = async () => {
+    await loadPayments();
+    toast.success('Payment recorded successfully');
   };
 
   const applyDiscount = async (fee: Fee, discountType: keyof typeof DISCOUNT_TYPES) => {
@@ -599,23 +619,6 @@ const FeesManager = () => {
     );
   };
 
-  const handlePaymentClick = (student: Student, amount: number, feeType: string, month?: string) => {
-    setSelectedPaymentDetails({
-      student,
-      amount,
-      feeType,
-      academicYear: selectedYear.toString(),
-      month,
-    });
-    setShowPaymentModal(true);
-  };
-
-  const handlePaymentSuccess = async () => {
-    // Refresh the payments list
-    await loadPayments();
-    toast.success('Payment recorded successfully');
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -856,7 +859,7 @@ const FeesManager = () => {
                     <div className="flex space-x-3">
                       {fee.status !== 'paid' && (
                         <button
-                          onClick={() => handlePaymentClick(fee.studentName, fee.amount, 'Monthly Fee', getMonthName(selectedMonth))}
+                          onClick={() => handlePaymentClick(fee.studentId, fee.amount, 'Monthly Fee', getMonthName(selectedMonth))}
                           className="text-emerald-600 hover:text-emerald-900"
                           title="Process Payment"
                         >

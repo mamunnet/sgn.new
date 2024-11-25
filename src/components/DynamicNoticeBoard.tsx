@@ -5,8 +5,16 @@ import { Bell, Calendar, FileText, Download } from 'lucide-react';
 import { motion } from 'framer-motion';
 import SectionHeading from './SectionHeading';
 
+interface Notice {
+  id: string;
+  title: string;
+  content: string;
+  date: string;
+  pdfUrl?: string;
+}
+
 const DynamicNoticeBoard = () => {
-  const [notices, setNotices] = useState([]);
+  const [notices, setNotices] = useState<Notice[]>([]);
 
   useEffect(() => {
     const q = query(
@@ -19,7 +27,7 @@ const DynamicNoticeBoard = () => {
       const noticeData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
-      }));
+      })) as Notice[];
       setNotices(noticeData);
     });
 

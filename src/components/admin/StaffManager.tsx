@@ -4,17 +4,54 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage
 import { db, storage } from '../../lib/firebase';
 import { toast } from 'react-hot-toast';
 import { Trash2, Edit, Plus, Upload, X, Save } from 'lucide-react';
-import { Staff } from '../../types/staff';
+
+interface Staff {
+  id: string;
+  name: string;
+  position: string;
+  qualification: string;
+  experience: string;
+  email: string;
+  phone: string;
+  bio: string;
+  joinDate: string;
+  expertise: string[];
+  photoUrl?: string;
+  storagePath?: string;
+  socialLinks: {
+    facebook: string;
+    twitter: string;
+    linkedin: string;
+  };
+  status: 'active' | 'inactive';
+  createdAt?: string;
+  updatedAt: string;
+}
+
+interface FormData {
+  name: string;
+  position: string;
+  qualification: string;
+  experience: string;
+  email: string;
+  phone: string;
+  bio: string;
+  joinDate: string;
+  facebook: string;
+  twitter: string;
+  linkedin: string;
+  status: 'active' | 'inactive';
+}
 
 const StaffManager = () => {
   const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState('');
+  const [photoPreview, setPhotoPreview] = useState<string>('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [expertise, setExpertise] = useState<string[]>(['']);
 
-  const [formData, setFormData] = useState({
+  const initialFormState: FormData = {
     name: '',
     position: '',
     qualification: '',
@@ -26,8 +63,10 @@ const StaffManager = () => {
     facebook: '',
     twitter: '',
     linkedin: '',
-    status: 'active' as const
-  });
+    status: 'active'
+  };
+
+  const [formData, setFormData] = useState<FormData>(initialFormState);
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, 'staff'), (snapshot) => {
@@ -96,7 +135,7 @@ const StaffManager = () => {
         storagePath = photoRef.fullPath;
       }
 
-      const staffData = {
+      const staffData: Partial<Staff> = {
         ...formData,
         expertise: expertise.filter(e => e.trim() !== ''),
         photoUrl: photoUrl || (editingId ? staff.find(s => s.id === editingId)?.photoUrl : ''),
@@ -119,7 +158,7 @@ const StaffManager = () => {
         toast.success('Staff updated successfully');
       } else {
         staffData.createdAt = new Date().toISOString();
-        await addDoc(collection(db, 'staff'), staffData);
+        await addDoc(collection(db, 'staff'), staffData as Staff);
         toast.success('Staff added successfully');
       }
 
@@ -133,20 +172,7 @@ const StaffManager = () => {
   };
 
   const resetForm = () => {
-    setFormData({
-      name: '',
-      position: '',
-      qualification: '',
-      experience: '',
-      email: '',
-      phone: '',
-      bio: '',
-      joinDate: '',
-      facebook: '',
-      twitter: '',
-      linkedin: '',
-      status: 'active'
-    });
+    setFormData(initialFormState);
     setPhotoFile(null);
     setPhotoPreview('');
     setExpertise(['']);
@@ -169,7 +195,7 @@ const StaffManager = () => {
       status: staffMember.status
     });
     setExpertise(staffMember.expertise);
-    setPhotoPreview(staffMember.photoUrl);
+    setPhotoPreview(staffMember.photoUrl || '');
     setEditingId(staffMember.id);
   };
 

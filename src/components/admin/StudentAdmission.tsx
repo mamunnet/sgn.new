@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { Upload, Plus, Minus, Save, Eye } from 'lucide-react';
+import { Upload, Plus, Minus, Save, Eye, User } from 'lucide-react';
 import { collection, addDoc, onSnapshot } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../../lib/firebase';
@@ -217,353 +217,418 @@ const StudentAdmission = () => {
 
   return (
     <div className="max-w-5xl mx-auto py-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">New Student Admission</h2>
+      {/* Enhanced Header */}
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">New Student Admission</h2>
+          <p className="text-sm text-gray-500 mt-1">Fill in the student details below</p>
+        </div>
         {formData.name && (
           <button
             type="button"
             onClick={() => setShowPreview(true)}
-            className="flex items-center px-4 py-2 text-sm text-emerald-600 hover:text-emerald-700"
+            className="flex items-center px-4 py-2 text-sm bg-emerald-50 text-emerald-600 rounded-md hover:bg-emerald-100 transition-colors"
           >
             <Eye className="h-4 w-4 mr-2" />
-            Preview
+            Preview Details
           </button>
         )}
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
-        {/* Photo Upload Section */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="col-span-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Student Photo
-            </label>
-            <div className="flex flex-col items-center">
-              {photoPreview ? (
-                <div className="relative">
-                  <img
-                    src={photoPreview}
-                    alt="Preview"
-                    className="w-40 h-40 object-cover rounded-lg"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPhotoFile(null);
-                      setPhotoPreview('');
-                    }}
-                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"
-                  >
-                    <Minus className="h-4 w-4" />
-                  </button>
-                </div>
-              ) : (
-                <label className="w-40 h-40 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-emerald-500">
-                  <Upload className="h-8 w-8 text-gray-400" />
-                  <span className="mt-2 text-sm text-gray-500">Upload Photo</span>
-                  <input
-                    type="file"
-                    className="hidden"
-                    accept="image/*"
-                    onChange={handlePhotoChange}
-                  />
+        {/* Enhanced Photo Upload Section */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="col-span-1">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Student Photo
+                  <span className="text-xs text-gray-500 block mt-1">Upload a clear passport size photo</span>
                 </label>
-              )}
-            </div>
-          </div>
+                <div className="flex flex-col items-center">
+                  {photoPreview ? (
+                    <div className="relative group">
+                      <img
+                        src={photoPreview}
+                        alt="Preview"
+                        className="w-40 h-40 object-cover rounded-lg shadow-md border-2 border-emerald-500"
+                      />
+                      <div className="absolute inset-0 bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPhotoFile(null);
+                            setPhotoPreview('');
+                          }}
+                          className="bg-red-500 text-white rounded-full p-2 hover:bg-red-600 transition-colors"
+                        >
+                          <Minus className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <label className="w-40 h-40 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-emerald-500 hover:bg-emerald-50 transition-all">
+                      <Upload className="h-8 w-8 text-gray-400" />
+                      <span className="mt-2 text-sm text-gray-500">Upload Photo</span>
+                      <span className="mt-1 text-xs text-gray-400">(Max 2MB)</span>
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={handlePhotoChange}
+                      />
+                    </label>
+                  )}
+                </div>
+              </div>
 
-          {/* Basic Information */}
-          <div className="col-span-2 grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Full Name</label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
-                required
-              />
-            </div>
+              {/* Basic Information */}
+              <div className="col-span-2 grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Full Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                    required
+                  />
+                </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Temporary Roll Number</label>
-              <input
-                type="text"
-                value={formData.tempRollNo}
-                className="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm text-gray-500"
-                disabled
-              />
-              <p className="mt-1 text-xs text-gray-500">Auto-generated temporary roll number</p>
-            </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Temporary Roll Number</label>
+                  <input
+                    type="text"
+                    value={formData.tempRollNo}
+                    className="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm text-gray-500"
+                    disabled
+                  />
+                  <p className="mt-1 text-xs text-gray-500">Auto-generated temporary roll number</p>
+                </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Date of Birth</label>
-              <input
-                type="date"
-                name="dateOfBirth"
-                value={formData.dateOfBirth}
-                onChange={handleChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
-                required
-              />
-            </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Date of Birth</label>
+                  <input
+                    type="date"
+                    name="dateOfBirth"
+                    value={formData.dateOfBirth}
+                    onChange={handleChange}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                    required
+                  />
+                </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Gender</label>
-              <select
-                name="gender"
-                value={formData.gender}
-                onChange={handleChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
-                required
-              >
-                <option value="">Select Gender</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
-              </select>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Gender</label>
+                  <select
+                    name="gender"
+                    value={formData.gender}
+                    onChange={handleChange}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                    required
+                  >
+                    <option value="">Select Gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Academic Information */}
-        <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 space-y-4">
-          <h3 className="text-lg font-semibold text-gray-900">Academic Information</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Class</label>
-              <select
-                name="class"
-                value={formData.class}
-                onChange={handleChange}
-                required
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
-              >
-                <option value="">Select Class</option>
-                {classes.map(cls => (
-                  <option key={cls.id} value={cls.name}>{cls.name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Section</label>
-              <select
-                name="section"
-                value={formData.section}
-                onChange={handleChange}
-                required
-                disabled={!formData.class || availableSections.length === 0}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-              >
-                <option value="">Select Section</option>
-                {availableSections.map(section => (
-                  <option key={section} value={section}>{section}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Facility</label>
-              <select
-                name="facility"
-                value={formData.facility}
-                onChange={handleChange}
-                required
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
-              >
-                <option value="day">Day Scholar</option>
-                <option value="hostel">Hostel</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Previous Academic Records */}
-          <div className="mt-6">
-            <div className="flex justify-between items-center mb-4">
-              <h4 className="text-md font-medium text-gray-900">Previous Academic Records</h4>
-              <button
-                type="button"
-                onClick={addAcademicRecord}
-                className="text-emerald-600 hover:text-emerald-700 flex items-center"
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                Add Subject
-              </button>
-            </div>
-
-            {academicRecords.map((record, index) => (
-              <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                <div className="col-span-2">
-                  <input
-                    type="text"
-                    placeholder="Subject"
-                    value={record.subject}
-                    onChange={(e) => handleAcademicRecordChange(index, 'subject', e.target.value)}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <input
-                    type="number"
-                    placeholder="Marks"
-                    value={record.marks}
-                    onChange={(e) => handleAcademicRecordChange(index, 'marks', e.target.value)}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
-                    required
-                  />
-                </div>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="number"
-                    placeholder="Total Marks"
-                    value={record.totalMarks}
-                    onChange={(e) => handleAcademicRecordChange(index, 'totalMarks', e.target.value)}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
-                    required
-                  />
-                  {academicRecords.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeAcademicRecord(index)}
-                      className="mt-1 text-red-600 hover:text-red-700"
-                    >
-                      <Minus className="h-5 w-5" />
-                    </button>
-                  )}
-                </div>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+          <div className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Academic Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Class</label>
+                <select
+                  name="class"
+                  value={formData.class}
+                  onChange={handleChange}
+                  required
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                >
+                  <option value="">Select Class</option>
+                  {classes.map(cls => (
+                    <option key={cls.id} value={cls.name}>{cls.name}</option>
+                  ))}
+                </select>
               </div>
-            ))}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Section</label>
+                <select
+                  name="section"
+                  value={formData.section}
+                  onChange={handleChange}
+                  required
+                  disabled={!formData.class || availableSections.length === 0}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                >
+                  <option value="">Select Section</option>
+                  {availableSections.map(section => (
+                    <option key={section} value={section}>{section}</option>
+                  ))}
+                </select>
+                {!formData.class && (
+                  <p className="mt-1 text-xs text-gray-500">Please select a class first</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Facility</label>
+                <select
+                  name="facility"
+                  value={formData.facility}
+                  onChange={handleChange}
+                  required
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                >
+                  <option value="day">Day Scholar</option>
+                  <option value="hostel">Hostel</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Previous Academic Records */}
+            <div className="mt-6">
+              <div className="flex justify-between items-center mb-4">
+                <h4 className="text-md font-medium text-gray-900">Previous Academic Records</h4>
+                <button
+                  type="button"
+                  onClick={addAcademicRecord}
+                  className="text-emerald-600 hover:text-emerald-700 flex items-center px-3 py-1 rounded-md hover:bg-emerald-50"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Subject
+                </button>
+              </div>
+
+              {academicRecords.map((record, index) => (
+                <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
+                  <div className="col-span-2">
+                    <input
+                      type="text"
+                      placeholder="Subject Name"
+                      value={record.subject}
+                      onChange={(e) => handleAcademicRecordChange(index, 'subject', e.target.value)}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <input
+                      type="number"
+                      placeholder="Marks Obtained"
+                      value={record.marks}
+                      onChange={(e) => handleAcademicRecordChange(index, 'marks', e.target.value)}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                      required
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="number"
+                      placeholder="Total Marks"
+                      value={record.totalMarks}
+                      onChange={(e) => handleAcademicRecordChange(index, 'totalMarks', e.target.value)}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                      required
+                    />
+                    {academicRecords.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeAcademicRecord(index)}
+                        className="mt-1 text-red-600 hover:text-red-700 p-1 rounded-full hover:bg-red-50"
+                      >
+                        <Minus className="h-5 w-5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+              
+              <div className="mt-4 text-right text-sm text-gray-600">
+                Total Percentage: {calculatePercentage()}%
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Personal Information */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Blood Group</label>
-            <select
-              name="bloodGroup"
-              value={formData.bloodGroup}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
-              required
-            >
-              <option value="">Select Blood Group</option>
-              {BLOOD_GROUPS.map(group => (
-                <option key={group} value={group}>{group}</option>
-              ))}
-            </select>
-          </div>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+          <div className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <User className="w-5 h-5 mr-2 text-emerald-600" />
+              Personal Information
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Blood Group</label>
+                <select
+                  name="bloodGroup"
+                  value={formData.bloodGroup}
+                  onChange={handleChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 transition-colors"
+                  required
+                >
+                  <option value="">Select Blood Group</option>
+                  {BLOOD_GROUPS.map(group => (
+                    <option key={group} value={group}>{group}</option>
+                  ))}
+                </select>
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Religion</label>
-            <select
-              name="religion"
-              value={formData.religion}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
-              required
-            >
-              <option value="">Select Religion</option>
-              {RELIGIONS.map(religion => (
-                <option key={religion} value={religion}>{religion}</option>
-              ))}
-            </select>
-          </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Religion</label>
+                <select
+                  name="religion"
+                  value={formData.religion}
+                  onChange={handleChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 transition-colors"
+                  required
+                >
+                  <option value="">Select Religion</option>
+                  {RELIGIONS.map(religion => (
+                    <option key={religion} value={religion}>{religion}</option>
+                  ))}
+                </select>
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Category</label>
-            <select
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
-              required
-            >
-              <option value="">Select Category</option>
-              {CATEGORIES.map(category => (
-                <option key={category} value={category}>{category}</option>
-              ))}
-            </select>
-          </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Category</label>
+                <select
+                  name="category"
+                  value={formData.category}
+                  onChange={handleChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 transition-colors"
+                  required
+                >
+                  <option value="">Select Category</option>
+                  {CATEGORIES.map(category => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </select>
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Aadhar Number</label>
-            <input
-              type="text"
-              name="aadharNo"
-              value={formData.aadharNo}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
-              required
-            />
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Aadhar Number
+                  <span className="text-xs text-gray-500 ml-1">(12 digits)</span>
+                </label>
+                <input
+                  type="text"
+                  name="aadharNo"
+                  value={formData.aadharNo}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '').slice(0, 12);
+                    handleChange({ ...e, target: { ...e.target, value } });
+                  }}
+                  pattern="[0-9]{12}"
+                  maxLength={12}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 transition-colors"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Nationality</label>
+                <input
+                  type="text"
+                  name="nationality"
+                  value={formData.nationality}
+                  onChange={handleChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 transition-colors"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Previous School</label>
+                <input
+                  type="text"
+                  name="previousSchool"
+                  value={formData.previousSchool}
+                  onChange={handleChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 transition-colors"
+                />
+                <p className="mt-1 text-xs text-gray-500">Leave blank if not applicable</p>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Contact Information */}
-        <div className="bg-gray-50 p-6 rounded-lg">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Contact Information</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Father's Name</label>
-              <input
-                type="text"
-                name="fatherName"
-                value={formData.fatherName}
-                onChange={handleChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
-                required
-              />
-            </div>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+          <div className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <User className="w-5 h-5 mr-2 text-emerald-600" />
+              Contact Information
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="group">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Father's Name</label>
+                <input
+                  type="text"
+                  name="fatherName"
+                  value={formData.fatherName}
+                  onChange={handleChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 transition-all duration-200 hover:border-emerald-400"
+                  required
+                />
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Mother's Name</label>
-              <input
-                type="text"
-                name="motherName"
-                value={formData.motherName}
-                onChange={handleChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
-                required
-              />
-            </div>
+              <div className="group">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mother's Name</label>
+                <input
+                  type="text"
+                  name="motherName"
+                  value={formData.motherName}
+                  onChange={handleChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 transition-all duration-200 hover:border-emerald-400"
+                  required
+                />
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Phone Number</label>
-              <input
-                type="tel"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
-                required
-              />
-            </div>
+              <div className="group">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 transition-all duration-200 hover:border-emerald-400"
+                  required
+                />
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Email</label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
-              />
-            </div>
+              <div className="group">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 transition-all duration-200 hover:border-emerald-400"
+                />
+              </div>
 
-            <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700">Address</label>
-              <textarea
-                name="address"
-                value={formData.address}
-                onChange={handleChange}
-                rows={3}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
-                required
-              />
+              <div className="col-span-2 group">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                <textarea
+                  name="address"
+                  value={formData.address}
+                  onChange={handleChange}
+                  rows={3}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 transition-all duration-200 hover:border-emerald-400 resize-none"
+                  required
+                />
+              </div>
             </div>
           </div>
         </div>

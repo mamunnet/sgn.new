@@ -1,19 +1,35 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, ChangeEvent, FormEvent } from 'react';
 import { collection, addDoc, deleteDoc, doc, updateDoc, onSnapshot } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, storage } from '../../lib/firebase';
 import { toast } from 'react-hot-toast';
 import { Trash2, Edit, Plus, Upload, X } from 'lucide-react';
 
+interface Alumni {
+  id: string;
+  name: string;
+  batch: string;
+  occupation: string;
+  testimonial: string;
+  photoUrl?: string;
+  storagePath?: string;
+  updatedAt?: string;
+}
+
+interface ImageData {
+  url: string;
+  path: string;
+}
+
 const AlumniManager = () => {
-  const [alumni, setAlumni] = useState([]);
+  const [alumni, setAlumni] = useState<Alumni[]>([]);
   const [name, setName] = useState('');
   const [batch, setBatch] = useState('');
   const [occupation, setOccupation] = useState('');
   const [testimonial, setTestimonial] = useState('');
-  const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState('');
-  const [editingId, setEditingId] = useState(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
@@ -21,15 +37,15 @@ const AlumniManager = () => {
       const alumniData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
-      }));
+      } as Alumni));
       setAlumni(alumniData);
     });
 
     return () => unsubscribe();
   }, []);
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
+  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (!file) return;
 
     // Validate file type
@@ -48,25 +64,25 @@ const AlumniManager = () => {
     setPreviewUrl(URL.createObjectURL(file));
   };
 
-  const uploadImage = async (file) => {
+  const uploadImage = async (file: File): Promise<ImageData> => {
     const storageRef = ref(storage, `alumni/${Date.now()}_${file.name}`);
     await uploadBytes(storageRef, file);
     const downloadUrl = await getDownloadURL(storageRef);
     return { url: downloadUrl, path: storageRef.fullPath };
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setUploading(true);
 
     try {
-      let imageData = null;
+      let imageData: ImageData | null = null;
 
       if (selectedImage) {
         imageData = await uploadImage(selectedImage);
       }
 
-      const alumniData = {
+      const alumniData: Partial<Alumni> = {
         name,
         batch,
         occupation,
@@ -116,16 +132,16 @@ const AlumniManager = () => {
     setEditingId(null);
   };
 
-  const handleEdit = (alumnus) => {
+  const handleEdit = (alumnus: Alumni) => {
     setName(alumnus.name);
     setBatch(alumnus.batch);
     setOccupation(alumnus.occupation);
     setTestimonial(alumnus.testimonial);
-    setPreviewUrl(alumnus.photoUrl);
+    setPreviewUrl(alumnus.photoUrl || '');
     setEditingId(alumnus.id);
   };
 
-  const handleDelete = async (alumnus) => {
+  const handleDelete = async (alumnus: Alumni) => {
     try {
       // Delete image from storage
       if (alumnus.storagePath) {
